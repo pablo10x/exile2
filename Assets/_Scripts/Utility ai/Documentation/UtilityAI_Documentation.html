@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Utility AI + FSM (with Odin Inspector) — Documentation</title>
+  <style>
+    :root{
+      --bg:#0f141a; --panel:#121820; --text:#e6edf3; --muted:#9aa6b2; --accent:#2f81f7; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --code:#0b1016;
+    }
+    html,body{height:100%}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,\"Noto Sans\",\"Helvetica Neue\",Arial,\"Apple Color Emoji\",\"Segoe UI Emoji\"; background:var(--bg); color:var(--text); line-height:1.6}
+    .container{max-width:1100px; margin:0 auto; padding:32px 20px}
+    h1,h2,h3{line-height:1.25}
+    h1{font-size:2rem; margin:0 0 8px}
+    h2{font-size:1.35rem; margin:28px 0 8px; color:#c9d1d9; border-left:4px solid var(--accent); padding-left:10px}
+    h3{font-size:1.1rem; margin:18px 0 6px; color:#c9d1d9}
+    p{margin:10px 0}
+    code,kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; background:var(--code); color:#c8e1ff; padding:1px 6px; border-radius:4px}
+    pre{background:var(--code); padding:14px; border-radius:8px; overflow:auto}
+    .grid{display:grid; gap:14px}
+    .two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .callout{background:var(--panel); border:1px solid #1f2630; border-left:4px solid var(--accent); padding:14px 16px; border-radius:8px}
+    .kbd{background:#11161d; color:#c8e1ff; border:1px solid #1f2630; padding:2px 6px; border-radius:6px}
+    a{color:#8ab4ff; text-decoration:none}
+    a:hover{text-decoration:underline}
+    ul{margin:8px 0 8px 22px}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#13233a; color:#9ecbff; font-size:.8rem; border:1px solid #203049}
+    .footer{margin-top:40px; font-size:.9rem; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Utility AI + FSM (with Odin Inspector)</h1>
+    <div class="grid two">
+      <div class="callout">
+        <div class="pill">Overview</div>
+        <p>This package provides a lightweight Utility AI framework integrated with a simple Finite State Machine (FSM). Author Actions and Considerations as ScriptableObjects, let the controller score them every tick, and optionally trigger a State when an Action is chosen. Odin Inspector is used to present clean, foldable inspectors.</p>
+      </div>
+      <div class="callout">
+        <div class="pill">Location</div>
+        <ul>
+          <li>Scripts: <code>Assets/_Scripts/Utility ai/</code></li>
+          <li>Editor Window: Window → AI → Utility AI Designer</li>
+          <li>Examples: <code>Assets/_Scripts/Utility ai/Examples/</code></li>
+          <li>Docs (this page): <code>Assets/_Scripts/Utility ai/Documentation/UtilityAI_Documentation.html</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Concepts</h2>
+    <div class="grid two">
+      <div>
+        <h3>AIContext</h3>
+        <p>MonoBehaviour containing the shared data for decisions: references (self, target) and arbitrary variables (e.g., <code>hunger01</code>, <code>energy01</code>). Extend it as needed.</p>
+      </div>
+      <div>
+        <h3>Consideration</h3>
+        <p>ScriptableObject deriving from <code>ConsiderationBase</code>. Computes a raw score in [0..1] from <code>AIContext</code>, optionally shaped by a curve and multiplied by a weight.</p>
+      </div>
+      <div>
+        <h3>Action</h3>
+        <p>ScriptableObject deriving from <code>ActionBase</code>. Holds a list of considerations. Its score is the product of consideration scores, optionally remapped by a curve and weighted. When selected, <code>Execute()</code> runs.</p>
+      </div>
+      <div>
+        <h3>Controller</h3>
+        <p><code>UtilityAIController</code> gathers Actions, evaluates them (every Update or at a fixed interval), and executes the highest-scoring one.</p>
+      </div>
+      <div>
+        <h3>FSM (Optional)</h3>
+        <p><code>AIStateMachine</code> holds and updates a current <code>AIState</code>. Each Action can specify <code>stateOnExecute</code> to transition the FSM when that Action is chosen.</p>
+      </div>
+      <div>
+        <h3>Editor</h3>
+        <p>The Utility AI Designer window helps browse/create Actions and edit considerations inline. Odin provides elegant foldouts and reorderable lists in inspectors.</p>
+      </div>
+    </div>
+
+    <h2>Installation & Requirements</h2>
+    <ul>
+      <li>Unity 2022+ (project currently on 6000.0.58f1).</li>
+      <li>Odin Inspector is already referenced in the project. If missing in another project, import Odin or remove Odin attributes.</li>
+    </ul>
+
+    <h2>Quick Start</h2>
+    <ol>
+      <li>Create a GameObject and add <code>AIContext</code> and <code>UtilityAIController</code>. Optionally add <code>AIStateMachine</code> if you use states.</li>
+      <li>Create Actions and Considerations as assets (Project window: right-click → Create → Utility AI/Action or your derived menu items).</li>
+      <li>Assign Considerations to Actions in the inspector. Tune weights and curves.</li>
+      <li>Assign Actions to the <code>UtilityAIController</code>.</li>
+      <li>(Optional) Assign a specific <code>AIState</code> asset to each Action’s <code>stateOnExecute</code>.</li>
+      <li>Press Play. The controller will execute and, if applicable, transition to the assigned state.</li>
+    </ol>
+
+    <h2>Designer Window</h2>
+    <p>Open via <span class="kbd">Window → AI → Utility AI Designer</span>. Features:</p>
+    <ul>
+      <li>Search and select Action assets.</li>
+      <li>Edit action properties (name, weight, curve).</li>
+      <li>Manage considerations using a reorderable list.</li>
+      <li>Inline inspector for selected consideration (Odin-powered).</li>
+      <li>Assign to a selected <code>UtilityAIController</code> in the scene.</li>
+    </ul>
+
+    <h2>Odin Inspector Enhancements</h2>
+    <ul>
+      <li><span class="pill">Action/General</span> — display name and core fields.</li>
+      <li><span class="pill">Action/Considerations</span> — reorderable list of considerations.</li>
+      <li><span class="pill">Action/Scoring</span> — weight and optional score curve.</li>
+      <li><span class="pill">Action/State</span> — optional <code>stateOnExecute</code> target state.</li>
+      <li><span class="pill">Consideration/General</span> and <span class="pill">Consideration/Response Curve</span> — clean foldouts for authoring.</li>
+    </ul>
+
+    <h2>Finite State Machine</h2>
+    <p>Add <code>AIStateMachine</code> to your agent. When the controller selects an action with <code>stateOnExecute</code> set, it calls <code>stateMachine.SetState(state, context)</code> then executes the action. States are ScriptableObjects with lifecycle methods:</p>
+<pre><code>public class AIState : ScriptableObject {
+  public virtual void OnEnter(AIContext ctx) {}
+  public virtual void OnUpdate(AIContext ctx) {}
+  public virtual void OnExit(AIContext ctx) {}
+}
+</code></pre>
+    <p>Examples include simple states like <code>IdleStateSO</code> and <code>EatingStateSO</code> under <code>Examples/FSM</code>.</p>
+
+    <h2>Examples</h2>
+    <ul>
+      <li><code>Examples/Utility AI Example/ExampleSetup.cs</code> — Runtime wiring of two actions: MoveTowardsTarget and Eat.</li>
+      <li><code>Examples/Utility AI Example/EatAction.cs</code> — Action that reduces hunger when in range.</li>
+      <li><code>Examples/Utility AI Example/MoveTowardsTargetAction.cs</code> — Action that moves toward target.</li>
+      <li><code>Examples/ExampleSetup_FSM.cs</code> — Shows how to add the FSM and assign <code>stateOnExecute</code>.</li>
+      <li><code>Examples/FSM/IdleStateSO.cs</code> and <code>Examples/FSM/EatingStateSO.cs</code> — Sample states.</li>
+    </ul>
+
+    <h2>Authoring Your Own</h2>
+    <h3>Consideration</h3>
+<pre><code>public class MyHealthLowConsideration : ConsiderationBase {
+  protected override float Score(AIContext ctx) {
+    // Assume you extended AIContext with health01
+    return 1f - Mathf.Clamp01(ctx.GetComponent&lt;MyContext&gt;().health01);
+  }
+}
+</code></pre>
+    <h3>Action</h3>
+<pre><code>[CreateAssetMenu(menuName="Utility AI/Action/MyAction")]
+public class MyAction : ActionBase {
+  public override void Execute(AIContext ctx) {
+    // Do something, e.g., set a NavMeshAgent destination
+  }
+}
+</code></pre>
+
+    <h2>Scoring Details</h2>
+    <p>Each Action’s score is:</p>
+<pre><code>score = clamp01( (prod_i clamp01( consideration_i(ctx) ))
+                 |> optional action score curve ) * max(0, actionWeight)
+</code></pre>
+    <p>Each Consideration’s output is:</p>
+<pre><code>value = clamp01( rawScore(ctx) |> optional consideration curve ) * max(0, considerationWeight)
+</code></pre>
+
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li>No action executes: ensure your considerations are not all returning 0; check context references.</li>
+      <li>State doesn’t change: add <code>AIStateMachine</code> to the GameObject and assign <code>stateOnExecute</code> on the action.</li>
+      <li>Editor window shows nothing: make sure you have at least one <code>ActionBase</code> asset.</li>
+      <li>Odin missing: remove attributes or import Odin Inspector.</li>
+    </ul>
+
+    <div class="footer">
+      <p>Updated: 2025-09-20 • Maintainer: Utility AI Module</p>
+    </div>
+  </div>
+</body>
+</html>

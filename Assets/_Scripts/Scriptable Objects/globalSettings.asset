@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 722845f68369bcb4595d231a82d47406, type: 3}
+  m_Name: globalSettings
+  m_EditorClassIdentifier: 
+  DefaultItemSprite: {fileID: 21300000, guid: 8ed320e07abe22048a8ef6ce1b586a57, type: 3}
+  playerSpeed: 5
+  itemVariationColor_common: {r: 0.61960787, g: 0.61960787, b: 0.61960787, a: 0.5882353}
+  itemVariationColor_uncommon: {r: 0.29803923, g: 0.6862745, b: 0.3137255, a: 0.5882353}
+  itemVariationColor_rare: {r: 0.12941177, g: 0.5882353, b: 0.9529412, a: 0.5882353}
+  itemVariationColor_epic: {r: 0.06666667, g: 0.33333334, b: 0, a: 0}
+  itemVariationColor_legendary: {r: 1, g: 0.59607846, b: 0, a: 0.5882353}
+  itemVariationColor_mythic: {r: 0.95686275, g: 0.2627451, b: 0.21176471, a: 0.5882353}
+  itemVariationColor_exotic: {r: 0, g: 0.7372549, b: 0.83137256, a: 0.5882353}
