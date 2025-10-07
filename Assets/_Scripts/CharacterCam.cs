@@ -84,60 +84,7 @@ public class CharacterCam : MonoBehaviour
 
     // Add these at the top of your Character class, after the fields
 
-    #region Prediction Data Structures
-
-    /// <summary>
-    /// Input data that gets sent from client to server every tick
-    /// This is SMALL - only the button presses, not positions!
-    /// </summary>
-    public struct MoveData : IReplicateData {
-        public float Horizontal; // Joystick left/right
-        public float Vertical;   // Joystick forward/back
-        public bool  Jump;       // Jump button pressed
-        public bool  Crouch;     // Crouch button pressed
-
-        // Constructor to easily create the data
-        public MoveData(float horizontal, float vertical, bool jump, bool crouch) {
-            Horizontal = horizontal;
-            Vertical   = vertical;
-            Jump       = jump;
-            Crouch     = crouch;
-            _tick      = 0;
-        }
-
-        // Required by Fish-Net
-        private uint _tick;
-        public  uint GetTick()           => _tick;
-        public  void SetTick(uint value) => _tick = value;
-        public  void Dispose()           { }
-    }
-
-    /// <summary>
-    /// State data that gets sent from server to client for corrections
-    /// This contains the "truth" - where you really are
-    /// </summary>
-    public struct ReconcileData : IReconcileData {
-        public Vector3        Position;
-        public Quaternion     Rotation;
-        public Vector3        Velocity;
-        public Character.CharacterState State;
-
-        public ReconcileData(Vector3 position, Quaternion rotation, Vector3 velocity, Character.CharacterState state) {
-            Position = position;
-            Rotation = rotation;
-            Velocity = velocity;
-            State    = state;
-            _tick    = 0;
-        }
-
-        // Required by Fish-Net
-        private uint _tick;
-        public  uint GetTick()           => _tick;
-        public  void SetTick(uint value) => _tick = value;
-        public  void Dispose()           { }
-    }
-
-    #endregion
+  
     
     #region Unity Lifecycle Methods
 
