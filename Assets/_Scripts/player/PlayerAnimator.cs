@@ -30,12 +30,12 @@ namespace core.player {
         
         
         //vehicles
-        [FormerlySerializedAs("Vehicle_Passenger_sit"), FoldoutGroup("Vehicles")] public AnimationClip anim_Vehicle_Passenger_sit;
+        [FoldoutGroup("Vehicles")] public AnimationClip anim_Vehicle_Passenger_sit;
         [FoldoutGroup("Vehicles")]                                                public AnimationClip Vehicle_driver_reversing;
 
         #region CombatMovement
 
-        [FormerlySerializedAs("combat_BareFistPunches"), FoldoutGroup("Combat")] [FoldoutGroup("Combat/BareFist")] public List<CharacterActionData> combat_BareFistPunches_idle;
+        [FormerlySerializedAs("combat_BareFistPunches"), FoldoutGroup("Combat")] public List<CharacterActionData> combat_BareFistPunches_idle;
         [FoldoutGroup("Combat/BareFist")]                                                                          public CharacterActionData       combat_BareFistPunche_run;
 
         #endregion
@@ -140,6 +140,8 @@ namespace core.player {
         /// <param name="fadeMode">The fade mode.</param>
         /// <returns>The animancer state.</returns>
         public AnimancerState PlayAnimation(AnimationClip clip, float fade = 0.2f, FadeMode fadeMode = FadeMode.FixedSpeed) {
+
+          
             return _BaseLayer.Play(clip, fade, fadeMode);
         }
 
@@ -261,7 +263,7 @@ namespace core.player {
             _lastStrafeClip = null;
         }
         public void UpdateStrafeAnimation() {
-            var direction  = UiManager.Instance.joystick.Direction;
+            var direction = UiManager.Instance.ultimateJoystick.Directions;
             var strafeType = _strafe_directionalAnimationSet.Snap(direction);
             var clip       = _strafe_directionalAnimationSet.Get(strafeType);
 
@@ -274,7 +276,7 @@ namespace core.player {
         }
 
         public void UpdateCrouchAnimation() {
-            var direction  = UiManager.Instance.joystick.Direction;
+            var direction  = UiManager.Instance.ultimateJoystick.Directions;
             var strafeType = _crouch_directionalAnimationSet.Snap(direction);
             var clip       = _crouch_directionalAnimationSet.Get(strafeType);
 

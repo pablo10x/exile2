@@ -40,7 +40,7 @@ namespace core.Vehicles {
 
         private AudioSource _audioSource;
 
-        [FoldoutGroup("Sounds")] [FoldoutGroup("Sounds/Door")] public AudioClip openDoor;
+        [FoldoutGroup("Sounds")]  public AudioClip openDoor;
         [FoldoutGroup("Sounds/Door")]                          public AudioClip closeDoor;
         [FoldoutGroup("Sounds/Honk")]                          public AudioClip HonkClip;
 

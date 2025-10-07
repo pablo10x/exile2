@@ -30,8 +30,8 @@ namespace Exile.Inventory {
         public                                             inv_type          TabType;
         public                                             RectTransform     mainrect;
         public                                             RectTransform[]     parentrects;
-        [FoldoutGroup("Grid Size")] [Range(1, 10)] public int               w = 5; // columns
-        [FoldoutGroup("Grid Size")] [Range(1, 10)] public int               h = 4; // rows
+        [FoldoutGroup("Grid Size")] [Range(1, 30)] public int               w = 5; // columns
+        [FoldoutGroup("Grid Size")] [Range(1, 30)] public int               h = 4; // rows
         public                                             InventoryRenderer _iv_render;
 
         [FormerlySerializedAs("incrementHeight")] public int incrementHeight = 10;

@@ -3,13 +3,17 @@ using Animancer;
 using core.Managers;
 using core.player;
 using core.Vehicles;
+using FishNet.Connection;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
 using KinematicCharacterController;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AI;
+using FishNet.Object;
 using UnityEngine.Serialization;
 
-public class Character : MonoBehaviour, ICharacterController {
+public class Character : NetworkBehaviour, ICharacterController {
     #region Character Enums, Properties, and Fields
 
     public enum CharacterState {
@@ -33,10 +37,10 @@ public class Character : MonoBehaviour, ICharacterController {
     //public VariableJoystick joystick;
     public CharacterCam orbitCamera;
 
-    public Transform               cameraTarget;
-    public KinematicCharacterMotor motor;
-
-    public NavMeshAgent navMeshAgent;
+    public                        Transform               cameraTarget;
+    public                        KinematicCharacterMotor motor;
+    public                        NavMeshAgent            navMeshAgent;
+    [Required("Required")] public PlayerStatus            PlayerStatus;
 
     //Rotation depends on camera or input
     private bool useInputForRotation = true;
@@ -93,6 +97,14 @@ public class Character : MonoBehaviour, ICharacterController {
 
     #endregion
 
+    private void OnStateChanged(CharacterState prev, CharacterState next, bool asServer) {
+        // Update animations or other visuals based on the new state.
+        // The 'asServer' flag is true if this is running on the server.
+        if (!asServer) {
+            UpdateAnimation();
+        }
+    }
+
     public CharacterState CurrentCharacterState {
         get => _currentCharacterState;
         set {
@@ -106,6 +118,13 @@ public class Character : MonoBehaviour, ICharacterController {
             UpdateAnimation();
         }
     }
+
+    // [ServerRpc]
+    // private void ServerSetCharacterState(CharacterState newState) {
+    //     // This runs on the server. The server has authority over the state.
+    //     SetState(newState);
+    //     Debug.Log($"SERVER: Changing user state");
+    // }
 
     #region ------- Events
 
@@ -124,9 +143,9 @@ public class Character : MonoBehaviour, ICharacterController {
 
     // Movement transition variables
     [FoldoutGroup("Movement/Transitions")] public float movementTransitionSpeed = 8f; // How fast to transition between movement states
-    private                                       float currentMoveSpeed;
-    private                                       float targetMoveSpeed;
-    private                                       float speedChangeVelocity; // Used for SmoothDamp
+    private                                  float currentMoveSpeed;
+    private                                  float targetMoveSpeed;
+    private                                  float speedChangeVelocity; // Used for SmoothDamp
 
     #endregion
 
@@ -158,6 +177,12 @@ public class Character : MonoBehaviour, ICharacterController {
     #region --- Misc
 
     public bool isFrozen;
+// Add this field to your Character class
+    public AnimationLockManager animationLockManager;
+
+    private void InitializeAnimationLockManager() {
+        animationLockManager = new AnimationLockManager(this);
+    }
 
     #endregion
 
@@ -171,10 +196,11 @@ public class Character : MonoBehaviour, ICharacterController {
                 break;
             }
         }
+
+        InitializeAnimationLockManager();
     }
 
     private void Start() {
-        SetupCharacter();
         //gravity
         currentGravity   = initialGravity;
         currentMoveSpeed = 0f; // Initialize movement speed
@@ -184,7 +210,10 @@ public class Character : MonoBehaviour, ICharacterController {
         SetJumpInput(true);
     }
 
-    private void Update() => HandleInput();
+    private void Update() 
+    {
+     HandleInput();
+    }    
 
     /// <summary>
     ///     (Called by KinematicCharacterMotor during its update cycle)
@@ -303,13 +332,15 @@ public class Character : MonoBehaviour, ICharacterController {
             HandleAirborneMovement(ref currentVelocity, deltaTime);
         }
 
-        switch (characterType) {
-            case CharacterType.Player:
-                UpdateMovementState(UiManager.Instance.joystick.Direction);
-                break;
-            case CharacterType.NPC:
-                UpdateMovementState(moveInputVector);
-                break;
+        if (!animationLockManager.ShouldBlockInput()) {
+            switch (characterType) {
+                case CharacterType.Player:
+                    UpdateMovementState(UiManager.Instance.ultimateJoystick.Directions);
+                    break;
+                case CharacterType.NPC:
+                    UpdateMovementState(moveInputVector);
+                    break;
+            }
         }
 
         if (isFrozen) currentVelocity = Vector3.zero;
@@ -511,14 +542,23 @@ public class Character : MonoBehaviour, ICharacterController {
             return;
         }
 
+        AnimancerState jumpingAnimationState = null;
         if (_currentCharacterState == CharacterState.Jumping) return;
-        if (CurrentCharacterState is CharacterState.Idle) {
-            pa.PlayAnimation(pa.anim_jump_inplace, 0.5f, FadeMode.FromStart);
+        if (_currentCharacterState == CharacterState.Idle) {
+            pa.PlayAnimation(pa.anim_jump_inplace, 0.2f, FadeMode.FromStart);
         }
         else {
-          
-            pa.PlayAnimation(pa.anim_jump_start, 0.2f, FadeMode.FromStart);
+            jumpingAnimationState = pa.PlayAnimation(pa.anim_jump_start, 0.2f, FadeMode.FromStart);
         }
+
+        if (jumpingAnimationState != null)
+            jumpingAnimationState.Events(this)
+                                 .OnEnd = () => {
+                isJumping = false;
+
+                CheckForFalling();
+            };
+
 
         isJumping             = true;
         jumpTime              = 0f;
@@ -527,6 +567,26 @@ public class Character : MonoBehaviour, ICharacterController {
     }
 
     private void UpdateJumpState(float deltaTime) {
+        jumpTime += deltaTime; // ← MOVED THIS TO ALWAYS INCREMENT
+
+        if (jumpTime >= maxJumpTime) {
+            if (_currentCharacterState != CharacterState.Falling) {
+                isJumping             = false;
+                is_Falling            = true;      // ← ADD THIS
+                fallStartTime         = Time.time; // ← ADD THIS
+                FallTime              = 0f;        // ← ADD THIS - Reset fall timer
+                CurrentCharacterState = CharacterState.Falling;
+            }
+        }
+        else {
+            // Ensure the character stays in the Jumping state for a minimum duration
+            if (_currentCharacterState != CharacterState.Jumping) {
+                CurrentCharacterState = CharacterState.Jumping;
+            }
+        }
+    }
+
+    private void UpdateJumpStatex(float deltaTime) {
         if (jumpTime >= maxJumpTime) {
             if (_currentCharacterState != CharacterState.Falling) {
                 isJumping             = false;
@@ -549,40 +609,85 @@ public class Character : MonoBehaviour, ICharacterController {
 
     #region core functions
 
-    public void AfterCharacterUpdate(float deltaTime) {
-        // Check if we've landed
+    private void HandleLanding() {
         if (motor.GroundingStatus.IsStableOnGround) {
             if (is_Falling || CurrentCharacterState == CharacterState.Falling) {
-                //todo more animations for higher falls
+                AnimancerState landingState = null;
 
-                AnimancerState s = null;
                 switch (FallTime) {
-                    case > 1f:
-                        if (!pa.isPlayingAnimation(pa.anim_land_med))
-                           // isFrozen = true;
-                          s =  pa.PlayAnimation(pa.anim_land_med, 0.2f);
+                    case > 0.8f: // Hard landing
+                        if (!pa.isPlayingAnimation(pa.anim_land_med)) {
+                            landingState = pa.PlayAnimation(pa.anim_land_med, 0.2f);
+
+                            // Lock player control until animation finishes
+                            animationLockManager.LockForAnimation(landingState,
+                                                                  AnimationLockManager.AnimationLockType.HardLanding,
+                                                                  onUnlock: () => {
+                                                                      CurrentCharacterState = CharacterState.Idle;
+                                                                      pa.PlayAnimation(pa.anim_idle);
+                                                                  });
+                        }
+
                         break;
-                    case > 0.5f:
-                        if (!pa.isPlayingAnimation(pa.anim_land_low))
-                            pa.PlayAnimation(pa.anim_land_low,0.2f);
+
+                    case > 0.2f: // Medium landing
+                        if (!pa.isPlayingAnimation(pa.anim_land_low)) {
+                            landingState = pa.PlayAnimation(pa.anim_land_low, 0.2f);
+
+                            // Optional: lock for medium landing too
+                            animationLockManager.LockForAnimation(landingState,
+                                                                  AnimationLockManager.AnimationLockType.HardLanding,
+                                                                  onUnlock: () => {
+                                                                      CurrentCharacterState = CharacterState.Idle;
+                                                                      pa.PlayAnimation(pa.anim_idle);
+                                                                  });
+                        }
+
                         break;
                 }
-
-                if (s != null)
-                    s.Events(this)
-                     .OnEnd += () => {
-                        Debug.Log("falling ended");
-                        if (isFrozen) isFrozen = false;
-
-                        pa.PlayAnimation(pa.anim_idle);
-                        CurrentCharacterState = CharacterState.Idle;
-                    };
 
                 is_Falling = false;
             }
 
             FallTime = 0f;
         }
+    }
+
+    public void AfterCharacterUpdate(float deltaTime) {
+        HandleLanding();
+        // Check if we've landed
+        // if (motor.GroundingStatus.IsStableOnGround) {
+        //     if (is_Falling || CurrentCharacterState == CharacterState.Falling) {
+        //         //todo more animations for higher falls
+        //
+        //         AnimancerState s = null;
+        //         switch (FallTime) {
+        //             case > 1f:
+        //                 if (!pa.isPlayingAnimation(pa.anim_land_med))
+        //                    // isFrozen = true;
+        //                   s =  pa.PlayAnimation(pa.anim_land_med, 0.2f);
+        //                 break;
+        //             case > 0.5f:
+        //                 if (!pa.isPlayingAnimation(pa.anim_land_low))
+        //                     pa.PlayAnimation(pa.anim_land_low,0.2f);
+        //                 break;
+        //         }
+        //
+        //         if (s != null)
+        //             s.Events(this)
+        //              .OnEnd += () => {
+        //                 Debug.Log("falling ended");
+        //                 if (isFrozen) isFrozen = false;
+        //
+        //                 pa.PlayAnimation(pa.anim_idle);
+        //                 CurrentCharacterState = CharacterState.Idle;
+        //             };
+        //
+        //         is_Falling = false;
+        //     }
+        //
+        //     FallTime = 0f;
+        // }
 
 
         //check if the assigned vehicle is still in distance
@@ -678,7 +783,7 @@ public class Character : MonoBehaviour, ICharacterController {
             }
 
             if (FallTime > 1f)
-                pa.PlayAnimation(pa.anim_falling_loop,0.8f);
+                pa.PlayAnimation(pa.anim_falling_loop, 0.5f);
 
             return;
         }
@@ -809,33 +914,35 @@ public class Character : MonoBehaviour, ICharacterController {
                                : cameraForward;
     }
 
-    private void SetupCharacter() {
-        switch (characterType) {
-            case CharacterType.Player:
-                SetupPlayerCharacter();
-                break;
-            case CharacterType.NPC:
-                SetupNPCCharacter();
-                break;
-            case CharacterType.NetworkPlayer:
-                SetupNetworkCharacter();
-                break;
-        }
+
+
+    public override void OnStartClient() {
+        base.OnStartClient();
+        SetupPlayerCharacter();
     }
 
     private void SetupPlayerCharacter() {
-        gameObject.name = "CHAR_[PLAYER]";
-
-        if (orbitCamera != null) {
-            orbitCamera.transform.parent = null;
-            orbitCamera.gameObject.name  = "Local Player Cam";
+        if (!IsOwner) {
+            var OwnerClientId = NetworkManager.ClientManager.Connection;
+            if (orbitCamera != null) Destroy(orbitCamera.gameObject);
+            gameObject.name = "CHAR_ NETWORK_[ " + OwnerClientId.ClientId + " ]";
         }
+        else {
+            gameObject.name = "MAIN PLAYER ---- >>";
+            if (orbitCamera != null) {
+                orbitCamera.transform.parent = null;
+                orbitCamera.gameObject.name  = "Local Player Cam";
+            }
 
-        UiManager.Instance.OnCardoorDriverButtonClicked    += OnCardoorDriverClicked;
-        UiManager.Instance.OnCardoorPassangerButtonClicked += OnCardoorPassangerClicked;
-        UiManager.Instance.OnCardoorExitButtonClicked      += OnCardoorExitClicked;
-        UiManager.Instance.OnJumpPressed                   += OnJumpPressed;
-        UiManager.Instance.SetupEventListeners(); // jump, run etc buttons
+
+            UiManager.Instance.OnCardoorDriverButtonClicked    += OnCardoorDriverClicked;
+            UiManager.Instance.OnCardoorPassangerButtonClicked += OnCardoorPassangerClicked;
+            UiManager.Instance.OnCardoorExitButtonClicked      += OnCardoorExitClicked;
+            UiManager.Instance.OnJumpPressed                   += OnJumpPressed;
+            UiManager.Instance.SetupEventListeners(); // jump, run etc buttons
+
+            GameManager.Instance.DisableMainCamera();
+        }
     }
 
     private void SetupNPCCharacter() {
@@ -868,12 +975,24 @@ public class Character : MonoBehaviour, ICharacterController {
     }
 
     private void HandlePlayerInput() {
+        // This check is crucial! It ensures this code only runs
+        // on the instance of the character that you own.
+        // if (!IsOwner) {
+        //     return;
+        // }
+        // Check if input should be blocked
+        if (animationLockManager != null && animationLockManager.ShouldBlockInput()) {
+            // Still allow camera movement if desired
+
+            return;
+        }
+
         var characterInputs = new PlayerCharacterInputs {
-            MoveAxisHorizontal = UiManager.Instance.joystick != null
-                                     ? UiManager.Instance.joystick.Horizontal
+            MoveAxisHorizontal = UiManager.Instance.ultimateJoystick != null
+                                     ? UiManager.Instance.ultimateJoystick.HorizontalAxis
                                      : 0f,
-            MoveAxisVertical = UiManager.Instance.joystick != null
-                                   ? UiManager.Instance.joystick.Vertical
+            MoveAxisVertical = UiManager.Instance.ultimateJoystick != null
+                                   ? UiManager.Instance.ultimateJoystick.VerticalAxis
                                    : 0f,
             CameraRotation = orbitCamera != null
                                  ? orbitCamera.transform.rotation
@@ -898,6 +1017,31 @@ public class Character : MonoBehaviour, ICharacterController {
 #endif
 
         SetInputs(ref characterInputs);
+    }
+
+    // Override input handling to respect locks
+    private void HandlePlayerInputx() {
+        // Check if input should be blocked
+        if (animationLockManager != null && animationLockManager.ShouldBlockInput()) {
+            // Still allow camera movement if desired
+            Debug.Log("Input blocked");
+            return;
+        }
+
+        // Your existing input handling code here
+        var characterInputs = new PlayerCharacterInputs {
+            MoveAxisHorizontal = UiManager.Instance.ultimateJoystick != null
+                                     ? UiManager.Instance.ultimateJoystick.HorizontalAxis
+                                     : 0f,
+            MoveAxisVertical = UiManager.Instance.ultimateJoystick != null
+                                   ? UiManager.Instance.ultimateJoystick.VerticalAxis
+                                   : 0f,
+            CameraRotation = orbitCamera != null
+                                 ? orbitCamera.transform.rotation
+                                 : Quaternion.identity
+        };
+
+        // Rest of your input handling...
     }
 
     private void ToggleCrouch() {

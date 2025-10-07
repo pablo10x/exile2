@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using _Scripts.Managers.Singeltons;
-using Core.Managers;
 using core.ui;
 using DG.Tweening;
 using QFSW.QC;
@@ -39,7 +38,7 @@ namespace core.Managers {
 
         #region Settings
 
-        [FoldoutGroup("Settings", expanded: false)] [SerializeField] private CanvasGroupToggler SettingsPage;
+        [FoldoutGroup("Settings")] [SerializeField] private CanvasGroupToggler SettingsPage;
         [FoldoutGroup("Settings/QualityPresets")] [SerializeField]   private cButton            bt_preset_Verylow;
         [FoldoutGroup("Settings/QualityPresets")] [SerializeField]   private cButton            bt_preset_low;
         [FoldoutGroup("Settings/QualityPresets")] [SerializeField]   private cButton            bt_preset_medium;
@@ -70,7 +69,8 @@ namespace core.Managers {
 
         #region Controller
 
-        [FoldoutGroup("Controller")] [FoldoutGroup("Controller/Player")] public VariableJoystick joystick;
+        //  [FoldoutGroup("Controller")] [FoldoutGroup("Controller/Player")] public VariableJoystick joystick;
+        [FoldoutGroup("Controller")] public UltimateJoystick ultimateJoystick;
         [FoldoutGroup("Controller/Player")]                              public Button           PlayerJump;
         [FoldoutGroup("Controller/Vehicle")]                             public Button           cardoorEnterDriver;
         [FoldoutGroup("Controller/Vehicle")]                             public Button           cardoorEnterPassanger;
@@ -81,18 +81,18 @@ namespace core.Managers {
 
         #region Vehicle Control
 
-        [FoldoutGroup("Vehicle Control", expanded: false)] public RCC_UI_Controller gasButton;
-        [FoldoutGroup("Vehicle Control", expanded: false)] public RCC_UI_Controller brakeButton;
-        [FoldoutGroup("Vehicle Control", expanded: false)] public RCC_UI_Controller leftButton;
-        [FoldoutGroup("Vehicle Control", expanded: false)] public RCC_UI_Controller rightButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller gasButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller brakeButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller leftButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller rightButton;
 
         //gas and speed
 
-        [FoldoutGroup("Vehicle Control/Vehicle info", expanded: false)] [GUIColor("green")] [SerializeField] private Image gasStationIcon;
+        [FoldoutGroup("Vehicle Control/Vehicle info")]  [SerializeField] private Image gasStationIcon;
 
-        [FoldoutGroup("Vehicle Control/Vehicle info", expanded: false)] [GUIColor("green")] [SerializeField] private Image fuelProgressBar;
+        [FoldoutGroup("Vehicle Control/Vehicle info")] [SerializeField] private Image fuelProgressBar;
 
-        [FoldoutGroup("Vehicle Control/Vehicle info", expanded: false)] [GUIColor("green")] [SerializeField] private TMP_Text vehicleSpeedText;
+        [FoldoutGroup("Vehicle Control/Vehicle info")]  [SerializeField] private TMP_Text vehicleSpeedText;
 
         // timer to update vehicle speed and fuel
         private float FuelAndGasUpdatetimer;
@@ -123,6 +123,17 @@ namespace core.Managers {
         [FoldoutGroup("Top Notification/Icons")] [SerializeField] private Sprite iconInfo;
         [FoldoutGroup("Top Notification/Icons")] [SerializeField] private Sprite iconWarning;
         [FoldoutGroup("Top Notification/Icons")] [SerializeField] private Sprite iconError;
+
+        #endregion
+
+        #region Player Stats ui references
+
+        [FoldoutGroup(" Player Status")] public CanvasGroupToggler PlayerStatusCanvasGroup;
+        [FoldoutGroup(" Player Status")] public StatsUI            PlayerHealth;
+        [FoldoutGroup(" Player Status")] public StatsUI            PlayerHunger;
+        [FoldoutGroup(" Player Status")] public StatsUI            PlayerThirst;
+        [FoldoutGroup(" Player Status")] public StatsUI            PlayerStamina;
+        [FoldoutGroup(" Player Status")] public StatsUI            PlayerTemp;
 
         #endregion
 
@@ -162,6 +173,9 @@ namespace core.Managers {
             InitializeUI();
             //  SetupEventListeners();
             // ListenForGraphicsSettings();
+
+
+            GameManager.Instance.OnPlayerSpawned += () => { BindPlayerStatsEvents(GameManager.Instance.character.PlayerStatus); };
         }
 
         #endregion
@@ -183,6 +197,18 @@ namespace core.Managers {
                 FuelAndGasUpdatetimer = 0f; // Reset the timer
             }
         }
+
+        #region Player Stats
+
+        public void BindPlayerStatsEvents(PlayerStatus status) {
+            status.OnHealthChanged  += () => { PlayerHealth.SetValue(status.health); };
+            status.OnHungerChanged  += () => { PlayerHunger.SetValue(status.hunger); };
+            status.OnThirstChanged  += () => { PlayerThirst.SetValue(status.thirst); };
+            status.OntempChanged    += () => { PlayerTemp.SetValue(status.temp); };
+            status.OnStaminaChanged += () => { };
+        }
+
+        #endregion
 
         #region Input
 
@@ -462,7 +488,6 @@ namespace core.Managers {
         /// Hides the settings page.
         /// </summary>
         public void HideSettings() {
-            
             AudioManager.Instance.UI_Return();
             SettingsPage.Disable();
         }
@@ -495,11 +520,7 @@ namespace core.Managers {
             cardoorExit.onClick.AddListener(() => OnCardoorExitButtonClicked?.Invoke());
 
             PlayerJump.onClick.AddListener(() => OnJumpPressed?.Invoke());
-            if (ClientManager.Instance != null) {
-                ClientManager.OnClientDisconnected    += () => RecconectPage.Enable(true);
-                ClientManager.OnClientReconnected     += () => RecconectPage.Disable(true);
-                ClientManager.OnClientReconnectFailed += () => throw new Exception("Failed to reconnect to server. Go back to preview screen?");
-            }
+         
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using Sirenix.OdinInspector;
+﻿
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace _Scripts.Managers.Singeltons
@@ -8,7 +9,7 @@ namespace _Scripts.Managers.Singeltons
         [Required] [SerializeField] private AudioSource _audioSource;
 
 
-        [FoldoutGroup("Audio Clips")] [FoldoutGroup("Audio Clips/UI")] [SerializeField]
+        [FoldoutGroup("Audio Clips")] [SerializeField]
         private AudioClip ui_button_click;
 
         [FoldoutGroup("Audio Clips/UI")] [SerializeField] private AudioClip ui_button_return;

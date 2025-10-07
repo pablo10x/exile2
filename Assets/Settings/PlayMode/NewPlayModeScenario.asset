@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a689d91966dfb46499fb63f130d9b905, type: 3}
   m_Name: NewPlayModeScenario
   m_EditorClassIdentifier: 
-  m_Description: 
+  m_Description: gfdgfdg
   m_EnableEditors: 1
   m_MainEditorInstance:
     Name: Main Editor
     <CorrespondingNodeId>k__BackingField: 
     m_Nodes: []
-    m_PlayerTag: 
-    m_InitialScene: {fileID: 0}
+    m_PlayerTag: test
+    m_InitialScene: {fileID: 102900000, guid: a62043ef9eb84754fbfe32d887cd681c, type: 3}
   m_EditorInstances: []
   m_LocalInstances: []
   m_RemoteInstances: []

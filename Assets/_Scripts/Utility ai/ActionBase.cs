@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using Sirenix.OdinInspector;
+using  Sirenix.OdinInspector;
 
 namespace UtilityAI
 {
@@ -17,15 +17,15 @@ namespace UtilityAI
 
         [FoldoutGroup("Action/Considerations")]
         [Tooltip("Considerations that determine the utility of this action.")]
-        [ListDrawerSettings(ShowFoldout = true, DraggableItems = true, ShowIndexLabels = false)]
+        
         public List<ConsiderationBase> considerations = new List<ConsiderationBase>();
 
-        [FoldoutGroup("Action/Scoring", Expanded = true)]
+        [FoldoutGroup("Action/Scoring")]
         [LabelText("Use Score Curve")] public bool useCurve = false;
         [FoldoutGroup("Action/Scoring")] public AnimationCurve scoreCurve = AnimationCurve.Linear(0, 0, 1, 1);
         [FoldoutGroup("Action/Scoring")] [Range(0f, 2f)] [LabelText("Weight")] public float weight = 1f;
 
-        [FoldoutGroup("Action/State", Expanded = true)]
+        [FoldoutGroup("Action/State")]
         [Tooltip("Optional: State machine state to enter when this action is selected.")]
         public AIState stateOnExecute;
 

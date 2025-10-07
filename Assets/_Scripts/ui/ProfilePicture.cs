@@ -1,5 +1,4 @@
 using core.ApiModels;
-using Core.Managers;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,15 +25,7 @@ public class ProfilePicture : MonoBehaviour {
 
 	private void Awake ()
 	{
-		ClientManager.OnFriendActivityChange += u => {
-
-			if (_userInfo != null) {
-				if (u.PlayerId == _userInfo.PlayerId) {
-					SetOnline (u.Activity.IsOnline);
-				}
-			}
-
-		};
+		
 	}
 
 
@@ -43,13 +34,7 @@ public class ProfilePicture : MonoBehaviour {
 		if (u is null) return;
 		_userInfo = u;
 
-		if (ClientManager.Instance.LocalPlayerData.PlayerId == u.PlayerId) {
-
-			SetOnline (true);
-		} else {
-
-			SetOnline (u.Activity.IsOnline);
-		}
+		
 
 	}
 

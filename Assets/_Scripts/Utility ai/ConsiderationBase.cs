@@ -10,7 +10,7 @@ namespace UtilityAI
     [Serializable]
     public abstract class ConsiderationBase : ScriptableObject, IConsideration
     {
-        [FoldoutGroup("Consideration/General", Expanded = true)]
+        [FoldoutGroup("Consideration/General")]
         [LabelText("Display Name")]
         [SerializeField] private string _name = "Consideration";
 
@@ -18,7 +18,7 @@ namespace UtilityAI
         [Tooltip("Multiply the contribution of this consideration.")]
         [Range(0f, 2f)] public float weight = 1f;
 
-        [FoldoutGroup("Consideration/Response Curve", Expanded = true)]
+        [FoldoutGroup("Consideration/Response Curve")]
         [LabelText("Use Curve")] public bool useCurve = true;
         [FoldoutGroup("Consideration/Response Curve")] public AnimationCurve curve = AnimationCurve.Linear(0, 0, 1, 1);
 

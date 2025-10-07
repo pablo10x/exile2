@@ -17,8 +17,8 @@ namespace core.ui {
         public event UnityAction OnOpened;
         public event UnityAction OnClosed;
 
-        [ Button ("Enable",ButtonSizes.Large )]     private void en ()  => Enable ();
-        [ Button ("disable",ButtonSizes.Large) ] private void dis () => Disable ();
+        [ Button ("Enable" )]     private void en ()  => Enable ();
+        [ Button ("disable") ] private void dis () => Disable ();
         
         
        public void Enable ( bool anim = false )

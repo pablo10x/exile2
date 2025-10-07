@@ -1,3 +1,4 @@
+
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ public class characterskin : ScriptableObject {
 	public              Gender   CharacterGender = Gender.Male;
 	[ Required ] public Material skinMaterial;
 
-	[ SerializeField ] [ PreviewField (ObjectFieldAlignment.Left) ] private Sprite CharacterThumbnail;
+	[ SerializeField ] [PreviewField(128)] private Sprite CharacterThumbnail;
 
 
 #region body parts
@@ -23,7 +24,7 @@ public class characterskin : ScriptableObject {
 	[ Required ] [ FoldoutGroup ("Body Parts") ]
 	public Mesh Head;
 
-	[ Required ] [ FoldoutGroup ("Body Parts") ] public Mesh Neck;
+	[ Required ] [ FoldoutGroup("Body Parts") ] public Mesh Neck;
 	[ Required ] [ FoldoutGroup ("Body Parts") ] public Mesh UpperBody;
 
 	[ Required ] [ FoldoutGroup ("Body Parts") ] public Mesh RightShoulder;

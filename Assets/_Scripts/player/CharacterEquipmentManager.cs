@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using core.Managers;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
 using MTAssets.SkinnedMeshCombiner;
@@ -47,6 +48,7 @@ namespace core.player
     {
         #region CharacterBodyParts
 
+        
         [FoldoutGroup("CharacterBodyParts")] [SerializeField] private SkinnedMeshRenderer Head;
         [FoldoutGroup("CharacterBodyParts")] [SerializeField] private SkinnedMeshRenderer Neck;
         [FoldoutGroup("CharacterBodyParts")] [SerializeField] private SkinnedMeshRenderer UpperBody;
@@ -80,7 +82,7 @@ namespace core.player
 
         private void Awake()
         {
-           // BuildCharacter(defaultskin);
+            SetSkin(GameManager.Instance.GlobalConfig.defaultcharacterSkin, false);
         }
 
         
@@ -280,7 +282,9 @@ namespace core.player
         /// Sets the character's skin
         /// </summary>
         /// <param name="skin">The skin to apply</param>
-        public void SetSkin(characterskin skin)
+        /// 
+        [Button("Setskin")]
+        public void SetSkin(characterskin skin, bool Combine)
         {
             bool combined = Combiner.isMeshesCombined();
             if (combined) Combiner.UndoCombineMeshes(false, false);
@@ -288,7 +292,7 @@ namespace core.player
             ApplySkinMeshes(skin);
             SetCharacterMaterial(skin.skinMaterial);
 
-            if (combined) Combiner.CombineMeshes();
+            if (Combine) Combiner.CombineMeshes();
         }
 
         /// <summary>
@@ -327,7 +331,7 @@ namespace core.player
                 }
             }
 
-            SetSkin(sk);
+            SetSkin(sk,true);
         }
 
         /// <summary>

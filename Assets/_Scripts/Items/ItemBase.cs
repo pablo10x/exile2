@@ -1,6 +1,7 @@
 ﻿using Exile.Inventory;
 using Exile.Inventory.Examples;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Exile.Inventory
@@ -62,7 +63,7 @@ namespace Exile.Inventory
         
         
         
-        [ShowIf("_iscontainer", true)] [FoldoutGroup("Container size", Expanded = false)] [SerializeField] private InventoryShape container_shape = null;
+        [ShowIf("_iscontainer", true)] [FoldoutGroup("Container size")] [SerializeField] private InventoryShape container_shape = null;
         public InventoryManager ContainerInventory { get; set; }
 
         /// <inheritdoc />
