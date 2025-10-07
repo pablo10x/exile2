@@ -262,9 +262,9 @@ namespace core.player {
            
             _lastStrafeClip = null;
         }
-        public void UpdateStrafeAnimation() {
-            var direction = UiManager.Instance.ultimateJoystick.Directions;
-            var strafeType = _strafe_directionalAnimationSet.Snap(direction);
+        public void UpdateStrafeAnimation(Vector2 Directions) {
+            
+            var strafeType = _strafe_directionalAnimationSet.Snap(Directions);
             var clip       = _strafe_directionalAnimationSet.Get(strafeType);
 
             if (_lastStrafeClip != clip) {
@@ -275,9 +275,8 @@ namespace core.player {
             }
         }
 
-        public void UpdateCrouchAnimation() {
-            var direction  = UiManager.Instance.ultimateJoystick.Directions;
-            var strafeType = _crouch_directionalAnimationSet.Snap(direction);
+        public void UpdateCrouchAnimation(Vector2 Directions) {
+            var strafeType = _crouch_directionalAnimationSet.Snap(Directions);
             var clip       = _crouch_directionalAnimationSet.Get(strafeType);
 
             if (_lastStrafeClip != clip) {

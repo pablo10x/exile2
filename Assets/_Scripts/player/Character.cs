@@ -5,6 +5,7 @@ using core.player;
 using core.Vehicles;
 using FishNet.Object;
 using FishNet.Object.Prediction;
+using FishNet.Transporting;
 using KinematicCharacterController;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -26,11 +27,11 @@ public class Character : NetworkBehaviour, ICharacterController {
         HandledByStateMachine
     }
 
-    public CharacterCam orbitCamera;
-    public Transform cameraTarget;
-    public KinematicCharacterMotor motor;
-    public NavMeshAgent navMeshAgent;
-    [Required("Required")] public PlayerStatus PlayerStatus;
+    public                        CharacterCam            orbitCamera;
+    public                        Transform               cameraTarget;
+    public                        KinematicCharacterMotor motor;
+    public                        NavMeshAgent            navMeshAgent;
+    [Required("Required")] public PlayerStatus            PlayerStatus;
 
     private bool useInputForRotation = true;
 
@@ -38,30 +39,30 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     #region Movement
 
-    [FoldoutGroup("Movement")] [SerializeField] private float MaxStableMoveSpeed = 6;
-    [FoldoutGroup("Movement")] public float orientationSharpness = 10;
-    [FoldoutGroup("Movement")] public float StableMovementSharpness = 15;
-    [FormerlySerializedAs("WALKING_SPEED"), FoldoutGroup("Movement")] public float STRAFE_SPEED = 3;
-    [FoldoutGroup("Movement")] [SerializeField] private float RUNNING_SPEED = 5;
-    [FoldoutGroup("Movement")] [SerializeField] private float CROUCH_SPEED = 2;
+    [FoldoutGroup("Movement")] [SerializeField]                       private float MaxStableMoveSpeed      = 6;
+    [FoldoutGroup("Movement")]                                        public  float orientationSharpness    = 10;
+    [FoldoutGroup("Movement")]                                        public  float StableMovementSharpness = 15;
+    [FormerlySerializedAs("WALKING_SPEED"), FoldoutGroup("Movement")] public  float STRAFE_SPEED            = 3;
+    [FoldoutGroup("Movement")] [SerializeField]                       private float RUNNING_SPEED           = 5;
+    [FoldoutGroup("Movement")] [SerializeField]                       private float CROUCH_SPEED            = 2;
 
     [FoldoutGroup("Movement/Air")] public float airOrientationSharpness = 5f;
-    [FoldoutGroup("Movement/Air")] public float drag = 0.1f;
+    [FoldoutGroup("Movement/Air")] public float drag                    = 0.1f;
 
-    [FoldoutGroup("Movement/Jumping")] public float RunningjumpForce = 10f;
-    [FoldoutGroup("Movement/Jumping")] public float IdlejumpForce = 10f;
-    [FoldoutGroup("Movement/Jumping")] [SerializeField] private bool isJumping;
-    [FoldoutGroup("Movement/Jumping")] public float coyoteTime = 0.15f;
-    [FoldoutGroup("Movement/Jumping")] public float jumpBufferTime = 0.1f;
-    [FoldoutGroup("Movement/Jumping")] public float maxJumpTime = 5f;
+    [FoldoutGroup("Movement/Jumping")]                  public  float RunningjumpForce = 10f;
+    [FoldoutGroup("Movement/Jumping")]                  public  float IdlejumpForce    = 10f;
+    [FoldoutGroup("Movement/Jumping")] [SerializeField] private bool  isJumping;
+    [FoldoutGroup("Movement/Jumping")]                  public  float coyoteTime     = 0.15f;
+    [FoldoutGroup("Movement/Jumping")]                  public  float jumpBufferTime = 0.1f;
+    [FoldoutGroup("Movement/Jumping")]                  public  float maxJumpTime    = 5f;
 
     [FoldoutGroup("Vehicle")] public CarController playerCar;
-    [FoldoutGroup("Vehicle")] public bool invehicle;
+    [FoldoutGroup("Vehicle")] public bool          invehicle;
 
-    [FoldoutGroup("Gravity")] public float initialGravity = -9.81f;
-    [FoldoutGroup("Gravity")] public float maxGravity = -30f;
-    [FoldoutGroup("Gravity")] public float gravityBuildUpTime = 0.5f;
-    [FoldoutGroup("Gravity")] [SerializeField] private float FallTime;
+    [FoldoutGroup("Gravity")]                  public  float  initialGravity     = -9.81f;
+    [FoldoutGroup("Gravity")]                  public  float  maxGravity         = -30f;
+    [FoldoutGroup("Gravity")]                  public  float  gravityBuildUpTime = 0.5f;
+    [FoldoutGroup("Gravity")] [SerializeField] private float  FallTime;
     [FoldoutGroup("Gravity")] [SerializeField] private double fallThreshold = 1.1f;
 
     #endregion
@@ -70,26 +71,27 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     #endregion
 
-
     #region Prediction Data Structures
 
     /// <summary>
     /// Input data that gets sent from client to server every tick
     /// This is SMALL - only the button presses, not positions!
     /// </summary>
-    public struct MoveData : IReplicateData {
+    public struct MoveData : IReplicateData { // what we send
         public float Horizontal; // Joystick left/right
         public float Vertical;   // Joystick forward/back
         public bool  Jump;       // Jump button pressed
         public bool  Crouch;     // Crouch button pressed
+        public Quaternion CamRotation; //
 
         // Constructor to easily create the data
-        public MoveData(float horizontal, float vertical, bool jump, bool crouch) {
+        public MoveData(float horizontal, float vertical, bool jump, bool crouch , Quaternion camRotation) {
             Horizontal = horizontal;
             Vertical   = vertical;
             Jump       = jump;
             Crouch     = crouch;
             _tick      = 0;
+            CamRotation = camRotation;
         }
 
         // Required by Fish-Net
@@ -103,7 +105,7 @@ public class Character : NetworkBehaviour, ICharacterController {
     /// State data that gets sent from server to client for corrections
     /// This contains the "truth" - where you really are
     /// </summary>
-    public struct ReconcileData : IReconcileData {
+    public struct ReconcileData : IReconcileData { //what server send
         public Vector3                  Position;
         public Quaternion               Rotation;
         public Vector3                  Velocity;
@@ -124,9 +126,8 @@ public class Character : NetworkBehaviour, ICharacterController {
         public  void Dispose()           { }
     }
 
-
-
     #endregion
+
     public CharacterState CurrentCharacterState {
         get => _currentCharacterState;
         set {
@@ -146,14 +147,14 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     #region Movement Input
 
-    public float Steeringsmoothness = 5f;
+    public  float   Steeringsmoothness = 5f;
     private Vector3 _lookInputVector;
     private Vector3 _moveInputVector;
 
     [FoldoutGroup("Movement/Transitions")] public float movementTransitionSpeed = 8f;
-    private float currentMoveSpeed;
-    private float targetMoveSpeed;
-    private float speedChangeVelocity;
+    private                                       float currentMoveSpeed;
+    private                                       float targetMoveSpeed;
+    private                                       float speedChangeVelocity;
 
     #endregion
 
@@ -162,14 +163,14 @@ public class Character : NetworkBehaviour, ICharacterController {
     private float currentGravity;
     private float fallStartTime;
     private float gravityVelocity;
-    private bool is_Falling;
+    private bool  is_Falling;
 
     #endregion
 
     #region Jumping
 
     private float jumpTime;
-    private bool jumpInput;
+    private bool  jumpInput;
     private float lastGroundedTime;
     private float lastJumpPressedTime;
 
@@ -183,8 +184,20 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     #region Misc
 
-    public bool isFrozen;
+    public bool                 isFrozen;
     public AnimationLockManager animationLockManager;
+
+    #region Prediction Fields
+
+    private bool _predictionInitialized = false;
+
+// Store the last input we gathered
+    private float _lastHorizontal;
+    private float _lastVertical;
+    private bool  _lastJumpInput;
+    private bool  _crouchTogglePressed; // Track if crouch was pressed this frame
+    private Quaternion _camerarotation;
+    #endregion
 
     private void InitializeAnimationLockManager() {
         animationLockManager = new AnimationLockManager(this);
@@ -198,113 +211,298 @@ public class Character : NetworkBehaviour, ICharacterController {
         InitializeAnimationLockManager();
     }
 
+    public override void OnStartNetwork() {
+        base.OnStartNetwork();
+        _predictionInitialized = true;
+
+        // Subscribe to Fish-Net's tick events
+        TimeManager.OnTick     += TimeManager_OnTick;
+        TimeManager.OnPostTick += TimeManager_OnPostTick;
+    }
+
+    public override void OnStopNetwork() {
+        base.OnStopNetwork();
+
+        // Unsubscribe from tick events
+        if (TimeManager != null) {
+            TimeManager.OnTick     -= TimeManager_OnTick;
+            TimeManager.OnPostTick -= TimeManager_OnPostTick;
+        }
+    }
+
+    /// <summary>
+    /// This replaces Update() for prediction
+    /// Called at a fixed rate synchronized between client and server
+    /// </summary>
+    private void TimeManager_OnTick() {
+        // Make sure network is ready
+        if (!_predictionInitialized)
+            return;
+
+        MoveData md;
+        BuildMoveData(out md); // Gather input
+        // CLIENT (YOU): Predict movement immediately
+        if (IsOwner) {
+            // We'll fill these in next steps
+            Reconciliationx(default); // Accept server corrections
+            
+            Move(md);                // Move immediately (prediction!)
+        }
+
+        // SERVER: Process the real movement
+        if (IsServer) {
+            Move(md);  // Process authoritative movement
+            SendReconciliation(); // Send correction to clients
+        }
+    }
+
+    public override void CreateReconcile() {
+        base.CreateReconcile();
+        ReconcileData rd = new ReconcileData(motor.TransientPosition,
+                                             motor.TransientRotation,
+                                             motor != null
+                                                 ? motor.Velocity
+                                                 : Vector3.zero,
+                                             _currentCharacterState);
+
+        Reconciliationx(rd);
+    }
+
+    /// <summary>
+    /// Called after physics/movement is done
+    /// Good place for animations and visual updates
+    /// </summary>
+    private void TimeManager_OnPostTick() {
+        if (!_predictionInitialized)
+            return;
+
+        // Update animations after movement is finalized
+        // This ensures smooth animation updates
+    }
+
     private void Start() {
-        currentGravity = initialGravity;
+        currentGravity   = initialGravity;
         currentMoveSpeed = 0f;
     }
 
     private void Update() {
-        if (IsOwner)
-            GatherInput();
+        // Only the owner gathers input
+        if (!IsOwner)
+            return;
+
+        // Only gather input - don't process movement!
+        // Movement happens in TimeManager_OnTick
+        GatherInputForPrediction();
     }
 
-    #region Input Handling
-
     /// <summary>
-    /// Main input gathering method - called every frame for the owner
+    /// Gathers input and stores it in local variables
+    /// This runs every frame (Update) to capture all input
+    /// The actual movement happens in TimeManager_OnTick
     /// </summary>
-    private void GatherInput() {
+    private void GatherInputForPrediction() {
         // Skip input if animation is locked
         if (animationLockManager != null && animationLockManager.ShouldBlockInput()) {
+            _lastHorizontal      = 0f;
+            _lastVertical        = 0f;
+            _lastJumpInput       = false;
+            _crouchTogglePressed = false;
             return;
         }
 
-        // Handle different states
-        switch (CurrentCharacterState) {
-            case CharacterState.InVehicleDriver:
-                GatherVehicleInput();
-                break;
-            case CharacterState.InVehiclePassenger:
-                // Passenger has no input
-                break;
-            default:
-                GatherMovementInput();
-                break;
+        // Handle vehicle input separately (not predicted)
+        if (CurrentCharacterState == CharacterState.InVehicleDriver) {
+            GatherVehicleInput();
+            return;
+        }
+
+        // Get joystick input
+        _lastHorizontal = UiManager.Instance.ultimateJoystick != null
+                              ? UiManager.Instance.ultimateJoystick.HorizontalAxis
+                              : 0f;
+
+        _lastVertical = UiManager.Instance.ultimateJoystick != null
+                            ? UiManager.Instance.ultimateJoystick.VerticalAxis
+                            : 0f;
+
+#if UNITY_EDITOR || !UNITY_ANDROID
+        // Keyboard override for testing
+        if (Input.GetKey(KeyCode.W)) _lastVertical   = 1f;
+        if (Input.GetKey(KeyCode.S)) _lastVertical   = -1f;
+        if (Input.GetKey(KeyCode.A)) _lastHorizontal = -1f;
+        if (Input.GetKey(KeyCode.D)) _lastHorizontal = 1f;
+
+        // Jump - GetKeyDown means "pressed this frame"
+        if (Input.GetKeyDown(KeyCode.Space))
+            _lastJumpInput = true;
+
+        // Crouch toggle
+        if (Input.GetKeyDown(KeyCode.C))
+            _crouchTogglePressed = true;
+#endif
+    }
+
+    /// <summary>
+    /// Packages the input we gathered into MoveData
+    /// This gets sent to the server
+    /// </summary>
+    private void BuildMoveData(out MoveData md) {
+        // Get camera rotation at time of input
+        Quaternion cameraRotation = orbitCamera != null
+                                        ? orbitCamera.transform.rotation
+                                        : Quaternion.identity;
+        // Package the input we stored
+        md = new MoveData(_lastHorizontal, _lastVertical, _lastJumpInput, _crouchTogglePressed, cameraRotation);
+
+        // Reset one-time inputs after reading them
+        // Jump and crouch should only trigger once
+        _lastJumpInput       = false;
+        _crouchTogglePressed = false;
+
+       // _camerarotation = orbitCamera != null? Quaternion.identity : orbitCamera.transform.rotation;
+        // Note: We DON'T reset horizontal/vertical
+        // Those are continuous (you can hold them)
+    }
+
+    /// <summary>
+    /// This method runs on BOTH client and server
+    /// [Replicate] attribute tells Fish-Net to sync this
+    /// </summary>
+    /// <param name="md">The input data</param>
+    /// <param name="asServer">True if running on server, false on client</param>
+    /// <param name="state"></param>
+    /// <param name="channel">Network channel to use</param>
+    /// <param name="replaying">True if this is a replay during reconciliation</param>
+    [Replicate]
+private void Move(MoveData md, ReplicateState state  = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
+{
+    // Don't process movement if in vehicle (handle separately)
+    if (CurrentCharacterState == CharacterState.InVehicleDriver || 
+        CurrentCharacterState == CharacterState.InVehiclePassenger)
+    {
+        return;
+    }
+
+    // Process the input into movement
+    ProcessReplicatedInput(md);
+    
+    // The KinematicCharacterMotor will call our UpdateVelocity
+    // and UpdateRotation methods automatically
+    // This is where the actual movement happens
+}
+
+/// <summary>
+/// Converts MoveData into actual movement vectors and state changes
+/// This is the "brain" that interprets the input
+/// </summary>
+[ObserversRpc]
+private void ProcessReplicatedInput(MoveData md)
+{
+    // Handle jump input
+    if (md.Jump)
+    {
+        SetJumpInput(true);
+    }
+
+    // Handle crouch toggle
+    if (md.Crouch)
+    {
+        ToggleCrouch();
+    }
+
+    // IMPORTANT: Use the camera rotation from MoveData, not current camera!
+    // This ensures server and client calculate the same movement direction
+    Quaternion cameraRotation = md.CamRotation;
+
+    var cameraForward = Vector3.ProjectOnPlane(cameraRotation * Vector3.forward, Vector3.up)
+                               .normalized;
+    var cameraRight = Vector3.Cross(Vector3.up, cameraForward)
+                             .normalized;
+
+    // Calculate move input based on the SENT camera orientation
+    _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
+    _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
+
+    // Set look direction
+    // _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
+    //     ? _moveInputVector
+    //     : cameraForward;
+    _lookInputVector = cameraForward;
+
+    // Update movement state based on input magnitude
+    if (!animationLockManager.ShouldBlockInput())
+    {
+        UpdateMovementState(new Vector2(md.Horizontal, md.Vertical));
+    }
+}
+    #region Input Handling
+
+
+
+
+    /// <summary>
+    /// Corrects the client if prediction was wrong
+    /// [Reconcile] attribute tells Fish-Net this is for corrections
+    /// </summary>
+    /// <param name="rd">The correction data from server</param>
+    /// <param name="asServer">True if running on server</param>
+    /// <param name="channel">Network channel</param>
+    [Reconcile]
+    private void Reconciliationx(ReconcileData rd, Channel channel = Channel.Unreliable) {
+        // Apply the server's correction
+        motor.SetPositionAndRotation(rd.Position,rd.Rotation);
+        
+
+        // Update the motor
+        if (motor != null) {
+            motor.SetPositionAndRotation(rd.Position, rd.Rotation);
+            // Note: You might need to also set velocity if you track it
+            // motor.BaseVelocity = rd.Velocity; (if your motor supports this)
+        }
+
+        // Update state
+        if (_currentCharacterState != rd.State) {
+            _currentCharacterState = rd.State;
         }
     }
 
     /// <summary>
-    /// Gathers movement input from joystick and keyboard
+    /// Creates and sends reconciliation data to clients
+    /// Required by Fish-Net when using [Reconcile] attribute
     /// </summary>
-    private void GatherMovementInput() {
-        // Get joystick input
-        float horizontal = UiManager.Instance.ultimateJoystick != null
-            ? UiManager.Instance.ultimateJoystick.HorizontalAxis
-            : 0f;
+    private void SendReconciliation() {
+        // Only server creates reconcile data
+        if (!IsServer)
+            return;
 
-        float vertical = UiManager.Instance.ultimateJoystick != null
-            ? UiManager.Instance.ultimateJoystick.VerticalAxis
-            : 0f;
+        // Create reconcile data with current authoritative state
+        ReconcileData rd = new ReconcileData(motor.TransientPosition,
+                                             motor.TransientRotation,
+                                             motor != null
+                                                 ? motor.Velocity
+                                                 : Vector3.zero,
+                                             _currentCharacterState);
 
-#if UNITY_EDITOR || !UNITY_ANDROID
-        // Keyboard override for testing
-        if (Input.GetKey(KeyCode.W)) vertical = 1f;
-        if (Input.GetKey(KeyCode.S)) vertical = -1f;
-        if (Input.GetKey(KeyCode.A)) horizontal = -1f;
-        if (Input.GetKey(KeyCode.D)) horizontal = 1f;
-
-        // Jump input
-        if (Input.GetKeyDown(KeyCode.Space)) SetJumpInput(true);
-        
-        // Crouch toggle
-        if (Input.GetKeyDown(KeyCode.C)) ToggleCrouch();
-#endif
-
-        // Convert input to movement vectors
-        ProcessMovementInput(horizontal, vertical);
+        // Send it to clients
+        Reconciliationx(rd);
     }
 
-    /// <summary>
-    /// Converts raw input values into movement vectors based on camera orientation
-    /// </summary>
-    private void ProcessMovementInput(float horizontal, float vertical) {
-        // Get camera orientation
-        Quaternion cameraRotation = orbitCamera != null
-            ? orbitCamera.transform.rotation
-            : Quaternion.identity;
-
-        var cameraForward = Vector3.ProjectOnPlane(cameraRotation * Vector3.forward, Vector3.up).normalized;
-        var cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
-
-        // Calculate move input based on camera orientation
-        _moveInputVector = (cameraForward * vertical + cameraRight * horizontal).normalized;
-        _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
-
-        // Set look direction
-        _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
-            ? _moveInputVector
-            : cameraForward;
-
-        // Update movement state based on input magnitude
-        UpdateMovementState(new Vector2(horizontal, vertical));
-    }
-
+    
     /// <summary>
     /// Gathers vehicle control input
     /// </summary>
     private void GatherVehicleInput() {
         if (playerCar == null) return;
 
-        playerCar.controllerV4.fuelInput = UiManager.Instance.GetInput(UiManager.Instance.gasButton);
+        playerCar.controllerV4.fuelInput  = UiManager.Instance.GetInput(UiManager.Instance.gasButton);
         playerCar.controllerV4.brakeInput = UiManager.Instance.GetInput(UiManager.Instance.brakeButton);
-        playerCar.controllerV4.steerInput = -UiManager.Instance.GetInput(UiManager.Instance.leftButton) + 
-                                             UiManager.Instance.GetInput(UiManager.Instance.rightButton);
+        playerCar.controllerV4.steerInput = -UiManager.Instance.GetInput(UiManager.Instance.leftButton) + UiManager.Instance.GetInput(UiManager.Instance.rightButton);
 
 #if UNITY_EDITOR || !UNITY_ANDROID
         // Keyboard override for vehicle
         if (Input.GetKey(KeyCode.Space)) playerCar.controllerV4.handbrakeInput = 1f;
-        else playerCar.controllerV4.handbrakeInput = 0f;
-        if (Input.GetKey(KeyCode.Z)) playerCar.controllerV4.fuelInput = 1f;
+        else playerCar.controllerV4.handbrakeInput                             = 0f;
+        if (Input.GetKey(KeyCode.Z)) playerCar.controllerV4.fuelInput  = 1f;
         if (Input.GetKey(KeyCode.S)) playerCar.controllerV4.brakeInput = 1;
         if (Input.GetKey(KeyCode.D)) playerCar.controllerV4.steerInput = 1;
         if (Input.GetKey(KeyCode.Q)) playerCar.controllerV4.steerInput = -1;
@@ -326,8 +524,8 @@ public class Character : NetworkBehaviour, ICharacterController {
                 Vector3 moveDir = _moveInputVector;
                 moveDir.y = 0f;
                 moveDir.Normalize();
-                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, moveDir, 
-                    1 - Mathf.Exp(-orientationSharpness * deltaTime)).normalized;
+                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, moveDir, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
+                                                       .normalized;
                 currentRotation = Quaternion.LookRotation(smoothedLookDirection, motor.CharacterUp);
             }
             else {
@@ -335,21 +533,21 @@ public class Character : NetworkBehaviour, ICharacterController {
                 Vector3 cameraForward = orbitCamera.transform.forward;
                 cameraForward.y = 0f;
                 cameraForward.Normalize();
-                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, cameraForward, 
-                    1 - Mathf.Exp(-orientationSharpness * deltaTime)).normalized;
+                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, cameraForward, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
+                                                       .normalized;
                 currentRotation = Quaternion.LookRotation(smoothedLookDirection, motor.CharacterUp);
             }
         }
         else if (motor.GroundingStatus.IsStableOnGround) {
-            Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 
-                1 - Mathf.Exp(-orientationSharpness * deltaTime)).normalized;
+            Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
+                                                        .normalized;
             currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, motor.CharacterUp);
         }
         else {
             // Air control
             if (_moveInputVector.sqrMagnitude > 0.01f) {
-                Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 
-                    1 - Mathf.Exp(-airOrientationSharpness * deltaTime)).normalized;
+                Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 1 - Mathf.Exp(-airOrientationSharpness * deltaTime))
+                                                            .normalized;
                 currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, motor.CharacterUp);
             }
         }
@@ -380,18 +578,18 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     public bool IsColliderValidForCollisions(Collider coll) => true;
 
-    public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, 
-        ref HitStabilityReport hitStabilityReport) { }
+    public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
 
-    public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, 
-        ref HitStabilityReport hitStabilityReport) {
+    public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) {
         if (hitCollider.CompareTag("Vehicle")) {
             var nearbyVehicle = hitCollider.GetComponentInParent<CarController>();
             if (nearbyVehicle is null) return;
 
             UiManager.Instance.ShowVehicleEnterExitButtons(true,
-                nearbyVehicle.driverSeat.used,
-                nearbyVehicle.GetFreeCarSeats().Count > 0);
+                                                           nearbyVehicle.driverSeat.used,
+                                                           nearbyVehicle.GetFreeCarSeats()
+                                                                        .Count >
+                                                           0);
 
             if (playerCar is null || playerCar != nearbyVehicle) {
                 playerCar = nearbyVehicle;
@@ -405,8 +603,7 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
     }
 
-    public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, 
-        Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
+    public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
 
     public void OnDiscreteCollisionDetected(Collider hitCollider) { }
 
@@ -419,6 +616,7 @@ public class Character : NetworkBehaviour, ICharacterController {
             if (CurrentCharacterState != CharacterState.Falling) {
                 CurrentCharacterState = CharacterState.Falling;
             }
+
             return;
         }
 
@@ -427,7 +625,7 @@ public class Character : NetworkBehaviour, ICharacterController {
 
         if (CurrentCharacterState == CharacterState.Crouched) {
             if (directions.magnitude > 0.2f) {
-                pa.UpdateCrouchAnimation();
+                pa.UpdateCrouchAnimation(new Vector2(_lastHorizontal, _lastVertical));
                 useInputForRotation = directions.y > 0.4f;
             }
             else {
@@ -435,6 +633,7 @@ public class Character : NetworkBehaviour, ICharacterController {
                 pa.resetCrouchAnimation();
                 pa.PlayAnimation(pa.crouch_idle, 0.3f);
             }
+
             return;
         }
 
@@ -445,7 +644,7 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
 
         if (directions.magnitude > 0.2f && directions.magnitude <= 0.8f || directions.y < 0.8f) {
-            if (!isJumping) pa.UpdateStrafeAnimation();
+            if (!isJumping) pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal,_lastVertical));
             if (useInputForRotation) useInputForRotation = false;
             SetState(CharacterState.Strafe);
         }
@@ -468,7 +667,7 @@ public class Character : NetworkBehaviour, ICharacterController {
                 MaxStableMoveSpeed = STRAFE_SPEED;
                 break;
             case CharacterState.Running:
-                MaxStableMoveSpeed = RUNNING_SPEED;
+                MaxStableMoveSpeed  = RUNNING_SPEED;
                 useInputForRotation = true;
                 break;
             case CharacterState.Crouched:
@@ -505,17 +704,19 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
         else {
             lastGroundedTime = Time.time;
-            currentVelocity = ReorientVelocityOnSlope(currentVelocity);
+            currentVelocity  = ReorientVelocityOnSlope(currentVelocity);
             Vector3 targetMovementVelocity = CalculateTargetGroundVelocity();
-            currentVelocity = SmoothVelocity(currentVelocity, targetMovementVelocity, 
-                StableMovementSharpness, deltaTime);
+            currentVelocity = SmoothVelocity(currentVelocity, targetMovementVelocity, StableMovementSharpness, deltaTime);
         }
     }
 
     private void HandleAirborneMovement(ref Vector3 currentVelocity, float deltaTime) {
         if (isJumping && jumpTime < 0.2f) {
             currentVelocity.y = Mathf.Max(currentVelocity.y,
-                0.8f * (CurrentCharacterState == CharacterState.Idle ? IdlejumpForce : RunningjumpForce));
+                                          0.8f *
+                                          (CurrentCharacterState == CharacterState.Idle
+                                               ? IdlejumpForce
+                                               : RunningjumpForce));
         }
         else {
             ApplySmoothGravity(ref currentVelocity, deltaTime);
@@ -537,7 +738,8 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     private Vector3 CalculateTargetGroundVelocity() {
         Vector3 inputRight = Vector3.Cross(_moveInputVector, motor.CharacterUp);
-        Vector3 reorientedInput = Vector3.Cross(motor.GroundingStatus.GroundNormal, inputRight).normalized * 
+        Vector3 reorientedInput = Vector3.Cross(motor.GroundingStatus.GroundNormal, inputRight)
+                                         .normalized *
                                   _moveInputVector.magnitude;
         return reorientedInput * MaxStableMoveSpeed;
     }
@@ -547,7 +749,7 @@ public class Character : NetworkBehaviour, ICharacterController {
     }
 
     private void ApplySmoothGravity(ref Vector3 currentVelocity, float deltaTime) {
-        currentGravity = Mathf.SmoothDamp(currentGravity, maxGravity, ref gravityVelocity, gravityBuildUpTime);
+        currentGravity    =  Mathf.SmoothDamp(currentGravity, maxGravity, ref gravityVelocity, gravityBuildUpTime);
         currentVelocity.y += currentGravity * deltaTime;
     }
 
@@ -561,10 +763,9 @@ public class Character : NetworkBehaviour, ICharacterController {
     }
 
     private bool CanJump() {
-        var timeSinceGrounded = Time.time - lastGroundedTime;
+        var timeSinceGrounded    = Time.time - lastGroundedTime;
         var timeSinceJumpPressed = Time.time - lastJumpPressedTime;
-        return (timeSinceGrounded < coyoteTime || motor.GroundingStatus.IsStableOnGround) && 
-               timeSinceJumpPressed < jumpBufferTime && !isJumping;
+        return (timeSinceGrounded < coyoteTime || motor.GroundingStatus.IsStableOnGround) && timeSinceJumpPressed < jumpBufferTime && !isJumping;
     }
 
     private void InitiateJump(ref Vector3 currentVelocity) {
@@ -576,7 +777,7 @@ public class Character : NetworkBehaviour, ICharacterController {
 
         AnimancerState jumpingAnimationState = null;
         if (_currentCharacterState == CharacterState.Jumping) return;
-        
+
         if (_currentCharacterState == CharacterState.Idle) {
             pa.PlayAnimation(pa.anim_jump_inplace, 0.2f, FadeMode.FromStart);
         }
@@ -585,20 +786,23 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
 
         if (jumpingAnimationState != null) {
-            jumpingAnimationState.Events(this).OnEnd = () => {
+            jumpingAnimationState.Events(this)
+                                 .OnEnd = () => {
                 isJumping = false;
                 CheckForFalling();
             };
         }
 
-        isJumping = true;
-        jumpTime = 0f;
+        isJumping             = true;
+        jumpTime              = 0f;
         CurrentCharacterState = CharacterState.Jumping;
         ApplyJumpForce(ref currentVelocity);
     }
 
     private void ApplyJumpForce(ref Vector3 currentVelocity) {
-        float jumpForce = (CurrentCharacterState == CharacterState.Idle) ? IdlejumpForce : RunningjumpForce;
+        float jumpForce = (CurrentCharacterState == CharacterState.Idle)
+                              ? IdlejumpForce
+                              : RunningjumpForce;
         currentVelocity.y = Mathf.Max(currentVelocity.y + jumpForce, jumpForce);
         motor.ForceUnground();
     }
@@ -608,10 +812,10 @@ public class Character : NetworkBehaviour, ICharacterController {
 
         if (jumpTime >= maxJumpTime) {
             if (_currentCharacterState != CharacterState.Falling) {
-                isJumping = false;
-                is_Falling = true;
-                fallStartTime = Time.time;
-                FallTime = 0f;
+                isJumping             = false;
+                is_Falling            = true;
+                fallStartTime         = Time.time;
+                FallTime              = 0f;
                 CurrentCharacterState = CharacterState.Falling;
             }
         }
@@ -628,6 +832,12 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
     }
 
+    // And ADD this new method:
+    private void OnJumpButtonPressed() {
+        // Just set the flag, it will be read in GatherInputForPrediction
+        _lastJumpInput = true;
+    }
+
     #endregion
 
     #region Falling
@@ -638,9 +848,11 @@ public class Character : NetworkBehaviour, ICharacterController {
             if (FallTime >= 0.5f && FallTime < 1f && !pa.isPlayingAnimation(pa.anim_falling_second)) {
                 pa.PlayAnimation(pa.anim_falling_second, 0.3f);
             }
+
             if (FallTime > 1f) {
                 pa.PlayAnimation(pa.anim_falling_loop, 0.5f);
             }
+
             return;
         }
 
@@ -648,7 +860,7 @@ public class Character : NetworkBehaviour, ICharacterController {
 
         if (!is_Falling) {
             fallStartTime = Time.time;
-            is_Falling = true;
+            is_Falling    = true;
         }
         else if (Time.time - fallStartTime >= fallThreshold) {
             CurrentCharacterState = CharacterState.Falling;
@@ -665,29 +877,32 @@ public class Character : NetworkBehaviour, ICharacterController {
                         if (!pa.isPlayingAnimation(pa.anim_land_med)) {
                             landingState = pa.PlayAnimation(pa.anim_land_med, 0.2f);
                             animationLockManager.LockForAnimation(landingState,
-                                AnimationLockManager.AnimationLockType.HardLanding,
-                                onUnlock: () => {
-                                    CurrentCharacterState = CharacterState.Idle;
-                                    pa.PlayAnimation(pa.anim_idle);
-                                });
+                                                                  AnimationLockManager.AnimationLockType.HardLanding,
+                                                                  onUnlock: () => {
+                                                                      CurrentCharacterState = CharacterState.Idle;
+                                                                      pa.PlayAnimation(pa.anim_idle);
+                                                                  });
                         }
+
                         break;
 
                     case > 0.2f:
                         if (!pa.isPlayingAnimation(pa.anim_land_low)) {
                             landingState = pa.PlayAnimation(pa.anim_land_low, 0.2f);
                             animationLockManager.LockForAnimation(landingState,
-                                AnimationLockManager.AnimationLockType.HardLanding,
-                                onUnlock: () => {
-                                    CurrentCharacterState = CharacterState.Idle;
-                                    pa.PlayAnimation(pa.anim_idle);
-                                });
+                                                                  AnimationLockManager.AnimationLockType.HardLanding,
+                                                                  onUnlock: () => {
+                                                                      CurrentCharacterState = CharacterState.Idle;
+                                                                      pa.PlayAnimation(pa.anim_idle);
+                                                                  });
                         }
+
                         break;
                 }
 
                 is_Falling = false;
             }
+
             FallTime = 0f;
         }
     }
@@ -701,8 +916,8 @@ public class Character : NetworkBehaviour, ICharacterController {
             playerCarSeat = playerCar.SetPlayerInVehicle(this, pa, true);
             if (playerCarSeat != null) {
                 CurrentCharacterState = playerCarSeat.Value.isDriver
-                    ? CharacterState.InVehicleDriver
-                    : CharacterState.InVehiclePassenger;
+                                            ? CharacterState.InVehicleDriver
+                                            : CharacterState.InVehiclePassenger;
             }
         }
     }
@@ -736,15 +951,15 @@ public class Character : NetworkBehaviour, ICharacterController {
     private void ExitVehicle() {
         if (playerCar is null || playerCarSeat is null) return;
 
-        motor.transform.parent = null;
+        motor.transform.parent     = null;
         motor.transform.localScale = Vector3.one;
         motor.SetPositionAndRotation(playerCarSeat.Value.exitpos.position, Quaternion.identity);
         TogglePlayerCollisionDetection(true);
         motor.enabled = true;
 
-        if (!playerCar.controllerV4.engineRunning) 
+        if (!playerCar.controllerV4.engineRunning)
             StopCoroutine(playerCar.controllerV4.StartEngineDelayed());
-        
+
         if (playerCarSeat.Value.isDriver) {
             playerCar.controllerV4.KillEngine();
             playerCar.driverSeat.used = false;
@@ -763,7 +978,7 @@ public class Character : NetworkBehaviour, ICharacterController {
         UiManager.Instance.ShowControllerPage();
         pa.FadeOutActionLayer();
 
-        invehicle = false;
+        invehicle             = false;
         CurrentCharacterState = CharacterState.Idle;
     }
 
@@ -799,7 +1014,7 @@ public class Character : NetworkBehaviour, ICharacterController {
                 pa.PlayAnimation(pa.anim_idle, 0.4f);
                 break;
             case CharacterState.Strafe:
-                pa.UpdateStrafeAnimation();
+                pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal, _lastVertical));
                 break;
             case CharacterState.Running:
                 pa.PlayAnimation(pa.anim_run, 0.4f);
@@ -845,33 +1060,31 @@ public class Character : NetworkBehaviour, ICharacterController {
         }
         else {
             gameObject.name = "LOCAL_PLAYER";
-            
+
             if (orbitCamera != null) {
                 orbitCamera.transform.parent = null;
-                orbitCamera.gameObject.name = "Local Player Cam";
+                orbitCamera.gameObject.name  = "Local Player Cam";
             }
 
             // Subscribe to UI events
-            UiManager.Instance.OnCardoorDriverButtonClicked += OnCardoorDriverClicked;
+            UiManager.Instance.OnCardoorDriverButtonClicked    += OnCardoorDriverClicked;
             UiManager.Instance.OnCardoorPassangerButtonClicked += OnCardoorPassangerClicked;
-            UiManager.Instance.OnCardoorExitButtonClicked += OnCardoorExitClicked;
-            UiManager.Instance.OnJumpPressed += InstanceOnOnJumpPressed;
+            UiManager.Instance.OnCardoorExitButtonClicked      += OnCardoorExitClicked;
+            UiManager.Instance.OnJumpPressed                   += OnJumpButtonPressed;
             UiManager.Instance.SetupEventListeners();
 
             GameManager.Instance.DisableMainCamera();
         }
     }
 
-    private void InstanceOnOnJumpPressed() {
-        throw new NotImplementedException();
-    }
+   
 
     private void OnDestroy() {
         if (IsOwner && UiManager.Instance != null) {
-            UiManager.Instance.OnCardoorDriverButtonClicked -= OnCardoorDriverClicked;
+            UiManager.Instance.OnCardoorDriverButtonClicked    -= OnCardoorDriverClicked;
             UiManager.Instance.OnCardoorPassangerButtonClicked -= OnCardoorPassangerClicked;
-            UiManager.Instance.OnCardoorExitButtonClicked -= OnCardoorExitClicked;
-            
+            UiManager.Instance.OnCardoorExitButtonClicked      -= OnCardoorExitClicked;
+            UiManager.Instance.OnJumpPressed -= OnJumpButtonPressed;
         }
 
         if (orbitCamera != null) {
@@ -890,7 +1103,7 @@ public class Character : NetworkBehaviour, ICharacterController {
 
         Gizmos.color = Color.green;
         Vector3[] corners = navMeshAgent.path.corners;
-        
+
         for (int i = 0; i < corners.Length - 1; i++) {
             Gizmos.DrawLine(corners[i], corners[i + 1]);
         }
