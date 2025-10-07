@@ -103,7 +103,7 @@ namespace core.Vehicles {
             driverSeat.used             = true;
             controllerV4.handbrakeInput = 0f;
 
-            if (character.characterType == Character.CharacterType.Player && UiManager.Instance != null) {
+            if (UiManager.Instance != null) {
                 UiManager.Instance.ShowVehicleControllerPage(true);
             }
 
@@ -123,7 +123,7 @@ namespace core.Vehicles {
         }
 
         private CarSeat SetPassengerInVehicle(Character character) {
-            if (character.characterType == Character.CharacterType.Player && UiManager.Instance != null) {
+            if (UiManager.Instance != null) {
                 UiManager.Instance.ShowVehicleControllerPage(false);
             }
 
@@ -227,7 +227,7 @@ namespace core.Vehicles {
 
             //
 
-            if (character.characterType == Character.CharacterType.Player) {
+           
                 if (UiManager.Instance != null && character.orbitCamera != null) {
                     // Update UI
                     UiManager.Instance.ShowControllerPage();
@@ -236,7 +236,7 @@ namespace core.Vehicles {
                     if (character.orbitCamera.IgnoredColliders.Contains(VehicleCollider))
                         character.orbitCamera.IgnoredColliders.Remove(VehicleCollider);
                 }
-            }
+            
 
 
             OnPlayerExitVehicle?.Invoke(character);

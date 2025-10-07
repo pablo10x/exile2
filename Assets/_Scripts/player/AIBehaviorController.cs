@@ -20,65 +20,10 @@
         {
             character = GetComponent<Character>();
             startPosition = transform.position;
-            StartCoroutine(SimulatePlayerInput());
+            
         }
     
-        private IEnumerator SimulatePlayerInput()
-        {
-            while (true)
-            {
-                // Generate random joystick direction
-                float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-                float magnitude = Random.Range(0.2f, 1f);
-                simulatedJoystickDirection = new Vector2(
-                    Mathf.Cos(angle) * magnitude,
-                    Mathf.Sin(angle) * magnitude
-                );
-    
-                // Choose movement type based on magnitude (similar to player joystick behavior)
-                if (simulatedJoystickDirection.magnitude < 0.1f)
-                {
-                    // Idle
-                    character.StopMoving();
-                }
-                else if (simulatedJoystickDirection.magnitude <= 0.8f || simulatedJoystickDirection.y < 0.8f)
-                {
-                    // Strafe
-                    if (allowStrafe)
-                    {
-                        Vector3 targetPosition = transform.position + new Vector3(
-                            simulatedJoystickDirection.x,
-                            0,
-                            simulatedJoystickDirection.y
-                        ) * 5f;
-                        
-                        // Keep within movement radius
-                        if (Vector3.Distance(targetPosition, startPosition) > movementRadius)
-                        {
-                            targetPosition = startPosition + (targetPosition - startPosition).normalized * movementRadius;
-                        }
-                        
-                        character.SetDestination(targetPosition, Character.MovementSpeed.Walk);
-                    }
-                }
-                else if (simulatedJoystickDirection.y > 0.8f && allowRunning)
-                {
-                    // Run forward
-                    Vector3 targetPosition = transform.position + transform.forward * 10f;
-                    
-                    // Keep within movement radius
-                    if (Vector3.Distance(targetPosition, startPosition) > movementRadius)
-                    {
-                        targetPosition = startPosition + (targetPosition - startPosition).normalized * movementRadius;
-                    }
-                    
-                    character.SetDestination(targetPosition, Character.MovementSpeed.Run);
-                }
-    
-                // Wait for random duration before next input change
-                yield return new WaitForSeconds(Random.Range(minActionDuration, maxActionDuration));
-            }
-        }
+     
     
         private void OnDrawGizmosSelected()
         {
@@ -102,6 +47,6 @@
         public void StopAIBehavior()
         {
             StopAllCoroutines();
-            character.StopMoving();
+         
         }
     }
