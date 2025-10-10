@@ -3,16 +3,20 @@ using Animancer;
 using core.Managers;
 using core.player;
 using core.Vehicles;
+using FishNet.Demo.Prediction.CharacterControllers;
 using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
+using FishNet.Utility.Template;
+using GameKit.Dependencies.Utilities;
 using KinematicCharacterController;
 using Sirenix.OdinInspector;
+using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 
-public class Character : NetworkBehaviour, ICharacterController {
+public class Character :  TickNetworkBehaviour, ICharacterController {
     #region Character Enums, Properties, and Fields
 
     public enum CharacterState {
@@ -77,30 +81,43 @@ public class Character : NetworkBehaviour, ICharacterController {
     /// Input data that gets sent from client to server every tick
     /// This is SMALL - only the button presses, not positions!
     /// </summary>
-    public struct MoveData : IReplicateData { // what we send
-        public float Horizontal; // Joystick left/right
-        public float Vertical;   // Joystick forward/back
-        public bool  Jump;       // Jump button pressed
-        public bool  Crouch;     // Crouch button pressed
-        public Quaternion CamRotation; //
+    public struct ReplicateData : IReplicateData { // what we send
+        public float      Horizontal;              // Joystick left/right
+        public float      Vertical;                // Joystick forward/back
+        public bool       Jump;                    // Jump button pressed
+        public bool       Crouch;                  // Crouch button pressed
+        public Quaternion CamRotation;             //
 
+        /// <summary>
+        /// The tick at which this data was created.
+        /// </summary>
         // Constructor to easily create the data
-        public MoveData(float horizontal, float vertical, bool jump, bool crouch , Quaternion camRotation) {
-            Horizontal = horizontal;
-            Vertical   = vertical;
-            Jump       = jump;
-            Crouch     = crouch;
-            _tick      = 0;
+        public ReplicateData(float horizontal, float vertical, bool jump, bool crouch, Quaternion camRotation) {
+            Horizontal  = horizontal;
+            Vertical    = vertical;
+            Jump        = jump;
+            Crouch      = crouch;
+            _tick       = 0;
             CamRotation = camRotation;
         }
 
         // Required by Fish-Net
+        /// <summary>
+        /// The tick at which this data was created.
+        /// </summary>
         private uint _tick;
+        /// <summary>
+        /// Gets the tick at which this data was created.
+        /// </summary>
         public  uint GetTick()           => _tick;
+        /// <summary>
+        /// Sets the tick at which this data was created.
+        /// </summary>
         public  void SetTick(uint value) => _tick = value;
         public  void Dispose()           { }
     }
 
+    private ReplicateData _lastTickedReplicateData = default;
     /// <summary>
     /// State data that gets sent from server to client for corrections
     /// This contains the "truth" - where you really are
@@ -111,7 +128,7 @@ public class Character : NetworkBehaviour, ICharacterController {
         public Vector3                  Velocity;
         public Character.CharacterState State;
 
-        public ReconcileData(Vector3 position, Quaternion rotation, Vector3 velocity, Character.CharacterState state) {
+        public ReconcileData(Vector3 position, Quaternion rotation, Vector3 velocity, CharacterState state) {
             Position = position;
             Rotation = rotation;
             Velocity = velocity;
@@ -189,14 +206,13 @@ public class Character : NetworkBehaviour, ICharacterController {
 
     #region Prediction Fields
 
-    private bool _predictionInitialized = false;
-
 // Store the last input we gathered
-    private float _lastHorizontal;
-    private float _lastVertical;
-    private bool  _lastJumpInput;
-    private bool  _crouchTogglePressed; // Track if crouch was pressed this frame
+    private float      _lastHorizontal;
+    private float      _lastVertical;
+    private bool       _lastJumpInput;
+    private bool       _crouchTogglePressed; // Track if crouch was pressed this frame
     private Quaternion _camerarotation;
+
     #endregion
 
     private void InitializeAnimationLockManager() {
@@ -209,55 +225,73 @@ public class Character : NetworkBehaviour, ICharacterController {
         navMeshAgent.transform.SetParent(transform, false);
         motor.CharacterController = this;
         InitializeAnimationLockManager();
+        SetTickCallbacks(TickCallback.Tick);
     }
 
     public override void OnStartNetwork() {
         base.OnStartNetwork();
-        _predictionInitialized = true;
+
 
         // Subscribe to Fish-Net's tick events
-        TimeManager.OnTick     += TimeManager_OnTick;
-        TimeManager.OnPostTick += TimeManager_OnPostTick;
+      //  TimeManager.OnTick     += TimeManager_OnTick;
+        //TimeManager.OnPostTick += TimeManager_OnPostTick;
+        UiManager.Instance.ShowControllerPage();
+        
     }
 
-    public override void OnStopNetwork() {
-        base.OnStopNetwork();
-
-        // Unsubscribe from tick events
-        if (TimeManager != null) {
-            TimeManager.OnTick     -= TimeManager_OnTick;
-            TimeManager.OnPostTick -= TimeManager_OnPostTick;
-        }
-    }
+   
 
     /// <summary>
     /// This replaces Update() for prediction
     /// Called at a fixed rate synchronized between client and server
     /// </summary>
-    private void TimeManager_OnTick() {
-        // Make sure network is ready
-        if (!_predictionInitialized)
-            return;
+    protected override void TimeManager_OnTick() {
 
-        MoveData md;
-        BuildMoveData(out md); // Gather input
-        // CLIENT (YOU): Predict movement immediately
-        if (IsOwner) {
-            // We'll fill these in next steps
-            Reconciliationx(default); // Accept server corrections
-            
-            Move(md);                // Move immediately (prediction!)
-        }
+        PerformReplicate(BuildMoveData());
+        CreateReconcile();
+    }
 
-        // SERVER: Process the real movement
-        if (IsServer) {
-            Move(md);  // Process authoritative movement
-            SendReconciliation(); // Send correction to clients
-        }
+    /// <summary>
+    /// Called after physics/movement is done
+    /// Good place for animations and visual updates
+    /// </summary>
+    protected override void TimeManager_OnPostTick() { }
+
+    /// <summary>
+    /// Packages the input we gathered into ReplicateData
+    /// This gets sent to the server
+    /// </summary>
+    /// 
+    private ReplicateData BuildMoveData() {
+
+        /* Only the controller needs to build move data.
+         * This could be the server if the server if no owner, for example
+         * such as AI, or the owner of the object. */
+        if (!IsOwner)
+            return default;
+        // Get camera rotation at time of input
+        Quaternion cameraRotation = orbitCamera != null
+                                        ? orbitCamera.transform.rotation
+                                        : Quaternion.identity;
+
+      
+        // Package the input we stored
+        ReplicateData replicateData = new ReplicateData(_lastHorizontal, _lastVertical, _lastJumpInput, _crouchTogglePressed, cameraRotation);
+
+        // Reset one-time inputs after reading them
+        // Jump and crouch should only trigger once
+        _lastJumpInput       = false;
+        _crouchTogglePressed = false;
+        // _camerarotation = orbitCamera != null? Quaternion.identity : orbitCamera.transform.rotation;
+        // Note: We DON'T reset horizontal/vertical
+        // Those are continuous (you can hold them)
+        return replicateData;
     }
 
     public override void CreateReconcile() {
-        base.CreateReconcile();
+       
+
+
         ReconcileData rd = new ReconcileData(motor.TransientPosition,
                                              motor.TransientRotation,
                                              motor != null
@@ -265,21 +299,126 @@ public class Character : NetworkBehaviour, ICharacterController {
                                                  : Vector3.zero,
                                              _currentCharacterState);
 
-        Reconciliationx(rd);
+        PerformReconcile(rd);
+    }
+
+    [Replicate]
+    private void PerformReplicate(ReplicateData rd, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable) {
+        // Don't process movement if in vehicle (handle separately)
+        if (CurrentCharacterState == CharacterState.InVehicleDriver || CurrentCharacterState == CharacterState.InVehiclePassenger) {
+            return;
+        }
+         // Always use the tickDelta as your delta when performing actions inside replicate.
+            float delta = (float)TimeManager.TickDelta;
+            bool useDefaultForces = false;
+            
+            /* When client only run some checks to
+             * further predict the clients future movement.
+             * This can keep the object more inlined with real-time by
+             * guessing what the clients input might be before we
+             * actually receive it.
+             *
+             * Doing this does risk a chance of graphical jitter in the
+             * scenario a de-synchronization occurs, but if only predicting
+             * a couple ticks the chances are low. */
+            // See https:// fish-networking.gitbook.io/docs/manual/guides/prediction/version-2/creating-code/predicting-states
+            if (!IsServerStarted && !IsOwner)
+            {
+                /* If ticked then set last ticked value.
+                 * Ticked means the replicate is being run from the tick cycle, more
+                 * specifically NOT from a replay/reconcile. */
+                if (state.ContainsTicked())
+                {
+                    /* Dispose of old should it have anything that needs to be cleaned up.
+                     * If you are only using value types in your data you do not need to call Dispose.
+                     * You must implement dispose manually to cache any non-value types, if you wish. */
+                    _lastTickedReplicateData.Dispose();
+                    // Set new.
+                    _lastTickedReplicateData = rd;
+                }
+                /* In the future means there is no way the data can be known to this client
+                 * yet. For example, the client is running this script locally and due to
+                 * how networking works, they have not yet received the latest information from
+                 * the server.
+                 *
+                 * If in the future then we are only going to predict up to
+                 * a certain amount of ticks in the future. This is us assuming that the
+                 * server (or client which owns this in this case) is going to use the
+                 * same input for at least X number of ticks. You can predict none, or as many
+                 * as you like, but the more inputs you predict the higher likeliness of guessing
+                 * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
+                else if (state.IsFuture())
+                {
+                    /* Predict up to 1 tick more. */
+                    if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1)
+                    {
+                        useDefaultForces = true;
+                    }
+                    else
+                    {
+                        /* If here we are predicting the future. */
+            
+                        /* You likely do not need to dispose rd here since it would be default
+                         * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
+                         * contain any garbage collection. */
+                        rd.Dispose();
+            
+                        rd = _lastTickedReplicateData;
+            
+                        /* There are some fields you might not want to predict, for example
+                         * jump. The odds of a client pressing jump two ticks in a row is unlikely.
+                         * The stamina check below would likely prevent such a scenario.
+                         *
+                         * We're going to unset jump for this reason. */
+                        rd.Jump = false;
+            
+                        /* Be aware that future predicting is not a one-size fits all
+                         * feature. How much you predict into the future, if at all, depends
+                         * on your game mechanics and your desired outcome. */
+                    }
+                }
+            }
+
+           
+                ProcessReplicatedInput(rd);
+            
+
+           
+
+        // The KinematicCharacterMotor will call our UpdateVelocity
+        // and UpdateRotation methods automatically
+        // This is where the actual movement happens
     }
 
     /// <summary>
-    /// Called after physics/movement is done
-    /// Good place for animations and visual updates
+    /// Corrects the client if prediction was wrong
+    /// [Reconcile] attribute tells Fish-Net this is for corrections
     /// </summary>
-    private void TimeManager_OnPostTick() {
-        if (!_predictionInitialized)
-            return;
+    /// <param name="rd">The correction data from server</param>
+    /// <param name="channel">Network channel</param>
+    [Reconcile]
+    private void PerformReconcile(ReconcileData rd, Channel channel = Channel.Unreliable) {
+        float delta = (float)TimeManager.TickDelta;
+        // --- Debug Comparison ---
+        // Calculate the difference between the server's state (rd) and the client's current predicted state.
+        float positionError = Vector3.Distance(rd.Position, motor.TransientPosition);
+        float rotationError = Quaternion.Angle(rd.Rotation, motor.TransientRotation);
 
-        // Update animations after movement is finalized
-        // This ensures smooth animation updates
+        // Log the error for debugging. You can adjust the threshold to only log significant deviations.
+        if (positionError > 0.01f || rotationError > 0.1f) {
+            Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}, Rot error: {rotationError:F2} degrees.");
+            // Apply the server's correction
+            motor.SetPositionAndRotation(rd.Position, rd.Rotation,false);
+            motor.BaseVelocity = rd.Velocity;
+        }
+        
+        // --- End Debug Comparison ---
+
+        // Update state
+        if (_currentCharacterState != rd.State) {
+            _currentCharacterState = rd.State;
+        }
     }
-
     private void Start() {
         currentGravity   = initialGravity;
         currentMoveSpeed = 0f;
@@ -289,6 +428,8 @@ public class Character : NetworkBehaviour, ICharacterController {
         // Only the owner gathers input
         if (!IsOwner)
             return;
+        
+        if (Input.GetKeyDown(KeyCode.X)) motor.SetPosition(new Vector3(motor.TransientPosition.x + 2, motor.TransientPosition.y + 0.2f, motor.TransientPosition.z));
 
         // Only gather input - don't process movement!
         // Movement happens in TimeManager_OnTick
@@ -301,6 +442,9 @@ public class Character : NetworkBehaviour, ICharacterController {
     /// The actual movement happens in TimeManager_OnTick
     /// </summary>
     private void GatherInputForPrediction() {
+
+        if (!IsOwner)
+            return;
         // Skip input if animation is locked
         if (animationLockManager != null && animationLockManager.ShouldBlockInput()) {
             _lastHorizontal      = 0f;
@@ -343,151 +487,49 @@ public class Character : NetworkBehaviour, ICharacterController {
     }
 
     /// <summary>
-    /// Packages the input we gathered into MoveData
-    /// This gets sent to the server
+    /// Converts ReplicateData into actual movement vectors and state changes
+    /// This is the "brain" that interprets the input
     /// </summary>
-    private void BuildMoveData(out MoveData md) {
-        // Get camera rotation at time of input
-        Quaternion cameraRotation = orbitCamera != null
-                                        ? orbitCamera.transform.rotation
-                                        : Quaternion.identity;
-        // Package the input we stored
-        md = new MoveData(_lastHorizontal, _lastVertical, _lastJumpInput, _crouchTogglePressed, cameraRotation);
+    private void ProcessReplicatedInput(ReplicateData md) {
+        // Handle jump input
+        if (md.Jump) {
+            SetJumpInput(true);
+        }
 
-        // Reset one-time inputs after reading them
-        // Jump and crouch should only trigger once
-        _lastJumpInput       = false;
-        _crouchTogglePressed = false;
+        // Handle crouch toggle
+        if (md.Crouch) {
+            ToggleCrouch();
+        }
 
-       // _camerarotation = orbitCamera != null? Quaternion.identity : orbitCamera.transform.rotation;
-        // Note: We DON'T reset horizontal/vertical
-        // Those are continuous (you can hold them)
+        // IMPORTANT: Use the camera rotation from ReplicateData, not current camera!
+        // This ensures server and client calculate the same movement direction
+        Quaternion cameraRotation = md.CamRotation;
+
+        var cameraForward = Vector3.ProjectOnPlane(cameraRotation * Vector3.forward, Vector3.up)
+                                   .normalized;
+        var cameraRight = Vector3.Cross(Vector3.up, cameraForward)
+                                 .normalized;
+
+        // Calculate move input based on the SENT camera orientation
+        _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
+        _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
+
+        // Set look direction
+        // _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
+        //     ? _moveInputVector
+        //     : cameraForward;
+        _lookInputVector = cameraForward;
+
+        // Update movement state based on input magnitude
+        if (!animationLockManager.ShouldBlockInput()) {
+            UpdateMovementState(new Vector2(md.Horizontal, md.Vertical));
+        }
     }
 
-    /// <summary>
-    /// This method runs on BOTH client and server
-    /// [Replicate] attribute tells Fish-Net to sync this
-    /// </summary>
-    /// <param name="md">The input data</param>
-    /// <param name="asServer">True if running on server, false on client</param>
-    /// <param name="state"></param>
-    /// <param name="channel">Network channel to use</param>
-    /// <param name="replaying">True if this is a replay during reconciliation</param>
-    [Replicate]
-private void Move(MoveData md, ReplicateState state  = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
-{
-    // Don't process movement if in vehicle (handle separately)
-    if (CurrentCharacterState == CharacterState.InVehicleDriver || 
-        CurrentCharacterState == CharacterState.InVehiclePassenger)
-    {
-        return;
-    }
-
-    // Process the input into movement
-    ProcessReplicatedInput(md);
-    
-    // The KinematicCharacterMotor will call our UpdateVelocity
-    // and UpdateRotation methods automatically
-    // This is where the actual movement happens
-}
-
-/// <summary>
-/// Converts MoveData into actual movement vectors and state changes
-/// This is the "brain" that interprets the input
-/// </summary>
-[ObserversRpc]
-private void ProcessReplicatedInput(MoveData md)
-{
-    // Handle jump input
-    if (md.Jump)
-    {
-        SetJumpInput(true);
-    }
-
-    // Handle crouch toggle
-    if (md.Crouch)
-    {
-        ToggleCrouch();
-    }
-
-    // IMPORTANT: Use the camera rotation from MoveData, not current camera!
-    // This ensures server and client calculate the same movement direction
-    Quaternion cameraRotation = md.CamRotation;
-
-    var cameraForward = Vector3.ProjectOnPlane(cameraRotation * Vector3.forward, Vector3.up)
-                               .normalized;
-    var cameraRight = Vector3.Cross(Vector3.up, cameraForward)
-                             .normalized;
-
-    // Calculate move input based on the SENT camera orientation
-    _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
-    _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
-
-    // Set look direction
-    // _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
-    //     ? _moveInputVector
-    //     : cameraForward;
-    _lookInputVector = cameraForward;
-
-    // Update movement state based on input magnitude
-    if (!animationLockManager.ShouldBlockInput())
-    {
-        UpdateMovementState(new Vector2(md.Horizontal, md.Vertical));
-    }
-}
     #region Input Handling
 
-
-
-
-    /// <summary>
-    /// Corrects the client if prediction was wrong
-    /// [Reconcile] attribute tells Fish-Net this is for corrections
-    /// </summary>
-    /// <param name="rd">The correction data from server</param>
-    /// <param name="asServer">True if running on server</param>
-    /// <param name="channel">Network channel</param>
-    [Reconcile]
-    private void Reconciliationx(ReconcileData rd, Channel channel = Channel.Unreliable) {
-        // Apply the server's correction
-        motor.SetPositionAndRotation(rd.Position,rd.Rotation);
-        
-
-        // Update the motor
-        if (motor != null) {
-            motor.SetPositionAndRotation(rd.Position, rd.Rotation);
-            // Note: You might need to also set velocity if you track it
-            // motor.BaseVelocity = rd.Velocity; (if your motor supports this)
-        }
-
-        // Update state
-        if (_currentCharacterState != rd.State) {
-            _currentCharacterState = rd.State;
-        }
-    }
-
-    /// <summary>
-    /// Creates and sends reconciliation data to clients
-    /// Required by Fish-Net when using [Reconcile] attribute
-    /// </summary>
-    private void SendReconciliation() {
-        // Only server creates reconcile data
-        if (!IsServer)
-            return;
-
-        // Create reconcile data with current authoritative state
-        ReconcileData rd = new ReconcileData(motor.TransientPosition,
-                                             motor.TransientRotation,
-                                             motor != null
-                                                 ? motor.Velocity
-                                                 : Vector3.zero,
-                                             _currentCharacterState);
-
-        // Send it to clients
-        Reconciliationx(rd);
-    }
-
     
+
     /// <summary>
     /// Gathers vehicle control input
     /// </summary>
@@ -644,7 +686,7 @@ private void ProcessReplicatedInput(MoveData md)
         }
 
         if (directions.magnitude > 0.2f && directions.magnitude <= 0.8f || directions.y < 0.8f) {
-            if (!isJumping) pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal,_lastVertical));
+            if (!isJumping) pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal, _lastVertical));
             if (useInputForRotation) useInputForRotation = false;
             SetState(CharacterState.Strafe);
         }
@@ -1077,14 +1119,12 @@ private void ProcessReplicatedInput(MoveData md)
         }
     }
 
-   
-
     private void OnDestroy() {
         if (IsOwner && UiManager.Instance != null) {
             UiManager.Instance.OnCardoorDriverButtonClicked    -= OnCardoorDriverClicked;
             UiManager.Instance.OnCardoorPassangerButtonClicked -= OnCardoorPassangerClicked;
             UiManager.Instance.OnCardoorExitButtonClicked      -= OnCardoorExitClicked;
-            UiManager.Instance.OnJumpPressed -= OnJumpButtonPressed;
+            UiManager.Instance.OnJumpPressed                   -= OnJumpButtonPressed;
         }
 
         if (orbitCamera != null) {
@@ -1121,4 +1161,13 @@ private void ProcessReplicatedInput(MoveData md)
 #endif
 
     #endregion
+
+    public class CharacterBaker : Baker<Character> {
+        public override void Bake(Character authoring) {
+            var entity = GetEntity(TransformUsageFlags.Dynamic);
+            AddComponent(entity, new CharacterComponentData());
+        }
+    }
 }
+
+public struct CharacterComponentData : IComponentData { }

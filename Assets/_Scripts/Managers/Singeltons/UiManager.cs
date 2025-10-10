@@ -322,11 +322,15 @@ namespace core.Managers {
         /// Shows the game controller page and hides the vehicle controller page.
         /// </summary>
         public void ShowControllerPage() {
+           
             gameControllerPage.Enable();
             vehicleControllerPage.Disable();
             driverControlButtons.gameObject.SetActive(false);
         }
 
+        public void HideControllerPage() {
+            gameControllerPage.Disable();
+        }
         /// <summary>
         /// Shows the vehicle controller page and optionally the driver control buttons.
         /// </summary>
