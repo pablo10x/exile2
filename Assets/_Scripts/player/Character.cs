@@ -17,7 +17,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 
-public class Character :  TickNetworkBehaviour, ICharacterController {
+public class Character : TickNetworkBehaviour, ICharacterController {
     #region Character Enums, Properties, and Fields
 
     public enum CharacterState {
@@ -78,6 +78,8 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
 
     #region Prediction Data Structures
 
+    private Quaternion _replicatedCameraRotation = Quaternion.identity;
+
     /// <summary>
     /// Input data that gets sent from client to server every tick
     /// This is SMALL - only the button presses, not positions!
@@ -107,18 +109,22 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         /// The tick at which this data was created.
         /// </summary>
         private uint _tick;
+
         /// <summary>
         /// Gets the tick at which this data was created.
         /// </summary>
-        public  uint GetTick()           => _tick;
+        public uint GetTick() => _tick;
+
         /// <summary>
         /// Sets the tick at which this data was created.
         /// </summary>
-        public  void SetTick(uint value) => _tick = value;
-        public  void Dispose()           { }
+        public void SetTick(uint value) => _tick = value;
+
+        public void Dispose() { }
     }
 
     private ReplicateData _lastTickedReplicateData = default;
+
     /// <summary>
     /// State data that gets sent from server to client for corrections
     /// This contains the "truth" - where you really are
@@ -234,20 +240,16 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
 
 
         // Subscribe to Fish-Net's tick events
-      //  TimeManager.OnTick     += TimeManager_OnTick;
+        //  TimeManager.OnTick     += TimeManager_OnTick;
         //TimeManager.OnPostTick += TimeManager_OnPostTick;
         UiManager.Instance.ShowControllerPage();
-        
     }
-
-   
 
     /// <summary>
     /// This replaces Update() for prediction
     /// Called at a fixed rate synchronized between client and server
     /// </summary>
     protected override void TimeManager_OnTick() {
-
         PerformReplicate(BuildMoveData());
         CreateReconcile();
     }
@@ -256,9 +258,7 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     /// Called after physics/movement is done
     /// Good place for animations and visual updates
     /// </summary>
-    protected override void TimeManager_OnPostTick() {
-       
-    }
+    protected override void TimeManager_OnPostTick() { }
 
     /// <summary>
     /// Packages the input we gathered into ReplicateData
@@ -266,35 +266,23 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     /// </summary>
     /// 
     private ReplicateData BuildMoveData() {
-
-        /* Only the controller needs to build move data.
-         * This could be the server if the server if no owner, for example
-         * such as AI, or the owner of the object. */
         if (!IsOwner)
             return default;
-        // Get camera rotation at time of input
-        Quaternion cameraRotation = orbitCamera != null
-                                        ? orbitCamera.transform.rotation
-                                        : Quaternion.identity;
 
-      
-        // Package the input we stored
+        // Ensure we always have a valid camera rotation
+        var cameraRotation = orbitCamera != null
+                                 ? orbitCamera.transform.rotation
+                                 : Quaternion.identity;
+
         ReplicateData replicateData = new ReplicateData(_lastHorizontal, _lastVertical, _lastJumpInput, _crouchTogglePressed, cameraRotation);
 
-        // Reset one-time inputs after reading them
-        // Jump and crouch should only trigger once
         _lastJumpInput       = false;
         _crouchTogglePressed = false;
-        // _camerarotation = orbitCamera != null? Quaternion.identity : orbitCamera.transform.rotation;
-        // Note: We DON'T reset horizontal/vertical
-        // Those are continuous (you can hold them)
+
         return replicateData;
     }
 
     public override void CreateReconcile() {
-       
-
-
         ReconcileData rd = new ReconcileData(motor.TransientPosition,
                                              motor.TransientRotation,
                                              motor != null
@@ -311,82 +299,76 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         if (CurrentCharacterState == CharacterState.InVehicleDriver || CurrentCharacterState == CharacterState.InVehiclePassenger) {
             return;
         }
-         // Always use the tickDelta as your delta when performing actions inside replicate.
-            float delta = (float)TimeManager.TickDelta;
-            bool useDefaultForces = false;
-            
-            /* When client only run some checks to
-             * further predict the clients future movement.
-             * This can keep the object more inlined with real-time by
-             * guessing what the clients input might be before we
-             * actually receive it.
+
+        // Always use the tickDelta as your delta when performing actions inside replicate.
+        float delta            = (float)TimeManager.TickDelta;
+        bool  useDefaultForces = false;
+
+        /* When client only run some checks to
+         * further predict the clients future movement.
+         * This can keep the object more inlined with real-time by
+         * guessing what the clients input might be before we
+         * actually receive it.
+         *
+         * Doing this does risk a chance of graphical jitter in the
+         * scenario a de-synchronization occurs, but if only predicting
+         * a couple ticks the chances are low. */
+        // See https:// fish-networking.gitbook.io/docs/manual/guides/prediction/version-2/creating-code/predicting-states
+        if (!IsServerStarted && !IsOwner) {
+            /* If ticked then set last ticked value.
+             * Ticked means the replicate is being run from the tick cycle, more
+             * specifically NOT from a replay/reconcile. */
+            if (state.ContainsTicked()) {
+                /* Dispose of old should it have anything that needs to be cleaned up.
+                 * If you are only using value types in your data you do not need to call Dispose.
+                 * You must implement dispose manually to cache any non-value types, if you wish. */
+                _lastTickedReplicateData.Dispose();
+                // Set new.
+                _lastTickedReplicateData = rd;
+            }
+            /* In the future means there is no way the data can be known to this client
+             * yet. For example, the client is running this script locally and due to
+             * how networking works, they have not yet received the latest information from
+             * the server.
              *
-             * Doing this does risk a chance of graphical jitter in the
-             * scenario a de-synchronization occurs, but if only predicting
-             * a couple ticks the chances are low. */
-            // See https:// fish-networking.gitbook.io/docs/manual/guides/prediction/version-2/creating-code/predicting-states
-            if (!IsServerStarted && !IsOwner)
-            {
-                /* If ticked then set last ticked value.
-                 * Ticked means the replicate is being run from the tick cycle, more
-                 * specifically NOT from a replay/reconcile. */
-                if (state.ContainsTicked())
-                {
-                    /* Dispose of old should it have anything that needs to be cleaned up.
-                     * If you are only using value types in your data you do not need to call Dispose.
-                     * You must implement dispose manually to cache any non-value types, if you wish. */
-                    _lastTickedReplicateData.Dispose();
-                    // Set new.
-                    _lastTickedReplicateData = rd;
+             * If in the future then we are only going to predict up to
+             * a certain amount of ticks in the future. This is us assuming that the
+             * server (or client which owns this in this case) is going to use the
+             * same input for at least X number of ticks. You can predict none, or as many
+             * as you like, but the more inputs you predict the higher likeliness of guessing
+             * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
+            else if (state.IsFuture()) {
+                /* Predict up to 1 tick more. */
+                if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1) {
+                    useDefaultForces = true;
                 }
-                /* In the future means there is no way the data can be known to this client
-                 * yet. For example, the client is running this script locally and due to
-                 * how networking works, they have not yet received the latest information from
-                 * the server.
-                 *
-                 * If in the future then we are only going to predict up to
-                 * a certain amount of ticks in the future. This is us assuming that the
-                 * server (or client which owns this in this case) is going to use the
-                 * same input for at least X number of ticks. You can predict none, or as many
-                 * as you like, but the more inputs you predict the higher likeliness of guessing
-                 * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
-                else if (state.IsFuture())
-                {
-                    /* Predict up to 1 tick more. */
-                    if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1)
-                    {
-                        useDefaultForces = true;
-                    }
-                    else
-                    {
-                        /* If here we are predicting the future. */
-            
-                        /* You likely do not need to dispose rd here since it would be default
-                         * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
-                         * contain any garbage collection. */
-                        rd.Dispose();
-            
-                        rd = _lastTickedReplicateData;
-            
-                        /* There are some fields you might not want to predict, for example
-                         * jump. The odds of a client pressing jump two ticks in a row is unlikely.
-                         * The stamina check below would likely prevent such a scenario.
-                         *
-                         * We're going to unset jump for this reason. */
-                        rd.Jump = false;
-            
-                        /* Be aware that future predicting is not a one-size fits all
-                         * feature. How much you predict into the future, if at all, depends
-                         * on your game mechanics and your desired outcome. */
-                    }
+                else {
+                    /* If here we are predicting the future. */
+
+                    /* You likely do not need to dispose rd here since it would be default
+                     * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
+                     * contain any garbage collection. */
+                    rd.Dispose();
+
+                    rd = _lastTickedReplicateData;
+
+                    /* There are some fields you might not want to predict, for example
+                     * jump. The odds of a client pressing jump two ticks in a row is unlikely.
+                     * The stamina check below would likely prevent such a scenario.
+                     *
+                     * We're going to unset jump for this reason. */
+                    rd.Jump = false;
+
+                    /* Be aware that future predicting is not a one-size fits all
+                     * feature. How much you predict into the future, if at all, depends
+                     * on your game mechanics and your desired outcome. */
                 }
             }
+        }
 
-           
-                ProcessReplicatedInput(rd);
-            
 
-           
+        ProcessReplicatedInput(rd);
+
 
         // The KinematicCharacterMotor will call our UpdateVelocity
         // and UpdateRotation methods automatically
@@ -408,26 +390,27 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         float rotationError = Quaternion.Angle(rd.Rotation, motor.TransientRotation);
 
         // Log the error for debugging. You can adjust the threshold to only log significant deviations.
-        if (positionError > 0.1f ) {
+        if (positionError > 2f) {
             Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
             // Apply the server's correction
-            motor.SetPosition(rd.Position,false);
+            motor.SetPosition(rd.Position, false);
             motor.BaseVelocity = rd.Velocity;
         }
 
-        if (rotationError > 0.1f) {
-            Debug.Log($"Reconcile difference on client {Owner.ClientId}.  Rot error: {rotationError:F2} degrees.");
-            motor.SetRotation(rd.Rotation);
+        if (rotationError > 20.1f) {
+            Debug.Log($"Reconcile >> {Owner.ClientId}.  Rot error: {rotationError:F2} degrees.");
+            // motor.SetRotation(rd.Rotation);
         }
-        
+
         // --- End Debug Comparison ---
 
         // Update state
         if (_currentCharacterState != rd.State) {
             Debug.Log($"Character State mismatch  current: {_currentCharacterState} || RD State: {rd.State}");
-            SetState(rd.State);
+            _currentCharacterState = rd.State;
         }
     }
+
     private void Start() {
         currentGravity   = initialGravity;
         currentMoveSpeed = 0f;
@@ -437,7 +420,7 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         // Only the owner gathers input
         if (!IsOwner)
             return;
-        
+
         if (Input.GetKeyDown(KeyCode.X)) motor.SetPosition(new Vector3(motor.TransientPosition.x + 2, motor.TransientPosition.y + 0.2f, motor.TransientPosition.z));
 
         // Only gather input - don't process movement!
@@ -451,7 +434,6 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     /// The actual movement happens in TimeManager_OnTick
     /// </summary>
     private void GatherInputForPrediction() {
-
         if (!IsOwner)
             return;
         // Skip input if animation is locked
@@ -495,10 +477,6 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
 #endif
     }
 
-    /// <summary>
-    /// Converts ReplicateData into actual movement vectors and state changes
-    /// This is the "brain" that interprets the input
-    /// </summary>
     private void ProcessReplicatedInput(ReplicateData md) {
         // Handle jump input
         if (md.Jump) {
@@ -510,24 +488,21 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
             ToggleCrouch();
         }
 
-        // IMPORTANT: Use the camera rotation from ReplicateData, not current camera!
-        // This ensures server and client calculate the same movement direction
-        Quaternion cameraRotation = md.CamRotation;
+        // STORE the replicated camera rotation for use in UpdateRotation
+        _replicatedCameraRotation = md.CamRotation;
 
-        var cameraForward = Vector3.ProjectOnPlane(cameraRotation * Vector3.forward, Vector3.up)
+        // Calculate the camera's forward and right vectors
+        var cameraForward = Vector3.ProjectOnPlane(_replicatedCameraRotation * Vector3.forward, motor.CharacterUp)
                                    .normalized;
         var cameraRight = Vector3.Cross(Vector3.up, cameraForward)
                                  .normalized;
 
-        // Calculate move input based on the SENT camera orientation
+        // Calculate movement vector relative to camera
         _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
         _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
 
-        //Set look direction
-        // _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
-        //     ? _moveInputVector
-        //     : cameraForward;
-        _lookInputVector = _moveInputVector;
+        // Set look direction to camera forward (for rotation)
+        _lookInputVector = cameraForward;
 
         // Update movement state based on input magnitude
         if (!animationLockManager.ShouldBlockInput()) {
@@ -536,8 +511,6 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     }
 
     #region Input Handling
-
-    
 
     /// <summary>
     /// Gathers vehicle control input
@@ -569,39 +542,40 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     public void BeforeCharacterUpdate(float deltaTime) { }
 
     public void UpdateRotation(ref Quaternion currentRotation, float deltaTime) {
-        if (orbitCamera != null) {
-            if (useInputForRotation && _moveInputVector.sqrMagnitude > 0.01f) {
-                // Rotate towards joystick direction when running
-                Vector3 moveDir = _moveInputVector;
-                moveDir.y = 0f;
-                moveDir.Normalize();
-                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, moveDir, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
-                                                       .normalized;
-                currentRotation = Quaternion.LookRotation(smoothedLookDirection, motor.CharacterUp);
-            }
-            else {
-                // Default: rotate towards camera forward
-                Vector3 cameraForward = orbitCamera.transform.forward;
-                cameraForward.y = 0f;
-                cameraForward.Normalize();
-                Vector3 smoothedLookDirection = Vector3.Slerp(motor.CharacterForward, cameraForward, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
-                                                       .normalized;
-                currentRotation = Quaternion.LookRotation(smoothedLookDirection, motor.CharacterUp);
-            }
+        // Early exit if no camera rotation data
+        if (_replicatedCameraRotation == Quaternion.identity) {
+            currentRotation = Quaternion.LookRotation(motor.CharacterForward, motor.CharacterUp);
+            return;
         }
-        else if (motor.GroundingStatus.IsStableOnGround) {
-            Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 1 - Mathf.Exp(-orientationSharpness * deltaTime))
-                                                        .normalized;
-            currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, motor.CharacterUp);
+
+        // Calculate camera forward direction from replicated data
+        Vector3 cameraForward = _replicatedCameraRotation * Vector3.forward;
+        cameraForward.y = 0f;
+        cameraForward   = cameraForward.normalized;
+
+        // Determine rotation based on state and input
+        Vector3 targetDirection;
+
+        if (useInputForRotation && _moveInputVector.sqrMagnitude > 0.01f) {
+            // Rotate towards movement direction (running/moving)
+            targetDirection   = _moveInputVector;
+            targetDirection.y = 0f;
+            targetDirection   = targetDirection.normalized;
         }
         else {
-            // Air control
-            if (_moveInputVector.sqrMagnitude > 0.01f) {
-                Vector3 smoothedLookInputDirection = Vector3.Slerp(motor.CharacterForward, _lookInputVector, 1 - Mathf.Exp(-airOrientationSharpness * deltaTime))
-                                                            .normalized;
-                currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, motor.CharacterUp);
-            }
+            // Rotate towards camera forward (idle/strafing)
+            targetDirection = cameraForward;
         }
+
+        // Apply appropriate smoothing based on grounding
+        float sharpness = motor.GroundingStatus.IsStableOnGround
+                              ? orientationSharpness
+                              : airOrientationSharpness;
+
+        Vector3 smoothedDirection = Vector3.Slerp(motor.CharacterForward, targetDirection, 1 - Mathf.Exp(-sharpness * deltaTime))
+                                           .normalized;
+
+        currentRotation = Quaternion.LookRotation(smoothedDirection, motor.CharacterUp);
     }
 
     public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime) {
@@ -1037,7 +1011,7 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         if (playerCar != null && playerCar.controllerV4 != null) {
             bool isReversing = playerCar.controllerV4.direction == -1 && playerCar.controllerV4.speed > 5f;
 
-            var newsteer = Mathf.Clamp(playerCar.controllerV4.FrontLeftWheelCollider.WheelCollider.steerAngle, -1, 1);
+            var newsteer = Mathf.Clamp(playerCar.controllerV4.FrontLeftWheelCollider.wheelCollider.steerAngle, -1, 1);
             pa.UpdateVehicleSteering_Mixer(newsteer, Steeringsmoothness);
 
             if (isReversing) {
@@ -1100,29 +1074,29 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     #region Network Setup
 
     public override void OnStartClient() {
-      
         SetupPlayerCharacter();
     }
-
-   
 
     public override void OnStartServer() {
         if (orbitCamera != null) {
             Destroy(orbitCamera.gameObject);
-            gameObject.name = ">Server::NET_PLAYER__" + Owner.ClientId;
-
         }
+
+        gameObject.name = ">Server::NET_PLAYER__" + Owner.ClientId;
     }
+
     private void SetupPlayerCharacter() {
         if (!IsOwner) {
             if (orbitCamera != null) {
                 Destroy(orbitCamera.gameObject);
             }
+
             gameObject.name = "NET_PLAYER__" + Owner.ClientId;
         }
-        
+
         else {
-            gameObject.name = "LOCAL_PLAYER";
+            GameManager.Instance.character = this;
+            gameObject.name                = "LOCAL_PLAYER";
 
             if (orbitCamera != null) {
                 orbitCamera.transform.parent = null;
@@ -1139,10 +1113,8 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
             GameManager.Instance.DisableMainCamera();
         }
 
-        
-        if (IsServerStarted) {
-           
-        }
+
+        if (IsServerStarted) { }
     }
 
     private void OnDestroy() {

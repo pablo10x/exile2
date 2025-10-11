@@ -81,10 +81,10 @@ namespace core.Managers {
 
         #region Vehicle Control
 
-        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller gasButton;
-        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller brakeButton;
-        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller leftButton;
-        [FoldoutGroup("Vehicle Control")] public RCC_UI_Controller rightButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UIController gasButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UIController brakeButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UIController leftButton;
+        [FoldoutGroup("Vehicle Control")] public RCC_UIController rightButton;
 
         //gas and speed
 
@@ -217,7 +217,7 @@ namespace core.Managers {
         /// </summary>
         /// <param name="button">The RCC_UIController button to get input from.</param>
         /// <returns>The input value from the button, or 0 if the button is null.</returns>
-        public float GetInput(RCC_UI_Controller button) {
+        public float GetInput(RCC_UIController button) {
             return button != null
                        ? button.input
                        : 0f;
@@ -341,7 +341,7 @@ namespace core.Managers {
             vehicleControllerPage.Enable();
         }
 
-        public void UpdateVehicleStatus(RCC_CarControllerV4 car) {
+        public void UpdateVehicleStatus(RCC_CarControllerV3 car) {
             if (car != null) {
                 var fuelTankCapacity = car.fuelTankCapacity;
                 var fuelTankLevel    = car.fuelTank;

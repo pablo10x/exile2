@@ -30,9 +30,9 @@ namespace core.Vehicles {
         }
     }
 
-    [RequireComponent(typeof(RCC_CarControllerV4), typeof(AudioSource))]
+    [RequireComponent(typeof(RCC_CarControllerV3), typeof(AudioSource))]
     public class CarController : Vehicle {
-        [FormerlySerializedAs("controllerV3"),SerializeField] public   RCC_CarControllerV4 controllerV4;
+        [FormerlySerializedAs("controllerV3"),SerializeField] public RCC_CarControllerV3 controllerV4;
         [SerializeField] private new Renderer            renderer;
         [SerializeField] internal Collider            VehicleCollider;
 

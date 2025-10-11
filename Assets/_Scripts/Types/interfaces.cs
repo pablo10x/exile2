@@ -15,6 +15,6 @@ namespace core.Types
 
     public interface IFuel
     {
-        Coroutine FuelVehicle(RCC_CarControllerV4 controller);
+        Coroutine FuelVehicle(RCC_CarControllerV3 controller);
     }
 }
