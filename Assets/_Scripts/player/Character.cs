@@ -3,6 +3,7 @@ using Animancer;
 using core.Managers;
 using core.player;
 using core.Vehicles;
+using FishNet.Component.Spawning;
 using FishNet.Demo.Prediction.CharacterControllers;
 using FishNet.Object;
 using FishNet.Object.Prediction;
@@ -255,7 +256,9 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     /// Called after physics/movement is done
     /// Good place for animations and visual updates
     /// </summary>
-    protected override void TimeManager_OnPostTick() { }
+    protected override void TimeManager_OnPostTick() {
+       
+    }
 
     /// <summary>
     /// Packages the input we gathered into ReplicateData
@@ -405,18 +408,24 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         float rotationError = Quaternion.Angle(rd.Rotation, motor.TransientRotation);
 
         // Log the error for debugging. You can adjust the threshold to only log significant deviations.
-        if (positionError > 0.01f || rotationError > 0.1f) {
-            Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}, Rot error: {rotationError:F2} degrees.");
+        if (positionError > 0.1f ) {
+            Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
             // Apply the server's correction
-            motor.SetPositionAndRotation(rd.Position, rd.Rotation,false);
+            motor.SetPosition(rd.Position,false);
             motor.BaseVelocity = rd.Velocity;
+        }
+
+        if (rotationError > 0.1f) {
+            Debug.Log($"Reconcile difference on client {Owner.ClientId}.  Rot error: {rotationError:F2} degrees.");
+            motor.SetRotation(rd.Rotation);
         }
         
         // --- End Debug Comparison ---
 
         // Update state
         if (_currentCharacterState != rd.State) {
-            _currentCharacterState = rd.State;
+            Debug.Log($"Character State mismatch  current: {_currentCharacterState} || RD State: {rd.State}");
+            SetState(rd.State);
         }
     }
     private void Start() {
@@ -514,11 +523,11 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
         _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
         _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
 
-        // Set look direction
+        //Set look direction
         // _lookInputVector = _moveInputVector.sqrMagnitude > 0.01f
         //     ? _moveInputVector
         //     : cameraForward;
-        _lookInputVector = cameraForward;
+        _lookInputVector = _moveInputVector;
 
         // Update movement state based on input magnitude
         if (!animationLockManager.ShouldBlockInput()) {
@@ -1091,15 +1100,27 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
     #region Network Setup
 
     public override void OnStartClient() {
-        base.OnStartClient();
+      
         SetupPlayerCharacter();
     }
 
+   
+
+    public override void OnStartServer() {
+        if (orbitCamera != null) {
+            Destroy(orbitCamera.gameObject);
+            gameObject.name = ">Server::NET_PLAYER__" + Owner.ClientId;
+
+        }
+    }
     private void SetupPlayerCharacter() {
         if (!IsOwner) {
-            if (orbitCamera != null) Destroy(orbitCamera.gameObject);
-            gameObject.name = "NETWORK_PLAYER_" + Owner.ClientId;
+            if (orbitCamera != null) {
+                Destroy(orbitCamera.gameObject);
+            }
+            gameObject.name = "NET_PLAYER__" + Owner.ClientId;
         }
+        
         else {
             gameObject.name = "LOCAL_PLAYER";
 
@@ -1116,6 +1137,11 @@ public class Character :  TickNetworkBehaviour, ICharacterController {
             UiManager.Instance.SetupEventListeners();
 
             GameManager.Instance.DisableMainCamera();
+        }
+
+        
+        if (IsServerStarted) {
+           
         }
     }
 
