@@ -1,12 +1,13 @@
 ﻿using System;
 using Animancer;
+using FishNet.Object;
 using JetBrains.Annotations;
 using UniRx;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace core.player {
-    public class CombatHandler : MonoBehaviour {
+    public class CombatHandler : NetworkBehaviour {
         private Character      _character;
         private PlayerAnimator _playerAnimator;
 
@@ -33,6 +34,7 @@ namespace core.player {
         /// <summary>
         ///  bareFist or holding a gun this method will be called
         /// </summary>
+        [ServerRpc(RequireOwnership = true)]
         public void Attack() {
             if (_currentWeapon is null) {
                 //bare fist animations

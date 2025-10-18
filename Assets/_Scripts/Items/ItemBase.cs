@@ -63,7 +63,7 @@ namespace Exile.Inventory
         
         
         
-        [ShowIf("_iscontainer", true)] [FoldoutGroup("Container size")] [SerializeField] private InventoryShape container_shape = null;
+        [FoldoutGroup("Container size")] [SerializeField] private InventoryShape container_shape = null;
         public InventoryManager ContainerInventory { get; set; }
 
         /// <inheritdoc />

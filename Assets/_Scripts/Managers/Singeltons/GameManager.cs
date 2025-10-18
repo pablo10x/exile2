@@ -71,6 +71,11 @@ namespace core.Managers {
                 defaultCamera.gameObject.SetActive(false);
         }
 
+        public void EnableMainCamera() {
+            if (defaultCamera != null)
+                defaultCamera.gameObject.SetActive(true);
+        }
+
         [Button("Respawn Player")]
         public void ResPawnPlayer() {
             if (character is null) return;

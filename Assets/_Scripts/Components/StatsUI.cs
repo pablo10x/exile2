@@ -17,7 +17,7 @@ public class StatsUI : MonoBehaviour {
     [BoxGroup("Stat Settings")] [SerializeField]         private float    maxValue          = 100f; // Maximum stat
     [BoxGroup("Color Change")] [SerializeField]          private bool     ChangeFillerColor = false;
     [BoxGroup("Color Change")] [SerializeField]          private bool     shouldchangeBasecolor = false;
-    [BoxGroup("Color Change")] [ShowIf("ChangeFillerColor", true)] [SerializeField] private Gradient colorGradient; // Color from empty to full
+    [BoxGroup("Color Change")]  [SerializeField] private Gradient colorGradient; // Color from empty to full
 
     [FoldoutGroup("Tween Settings")] [SerializeField] private float tweenDuration = 0.3f;          // seconds for smooth fill
     [FoldoutGroup("Tween Settings")] [SerializeField] private Ease  tweenEase     = Ease.Linear; // easing type

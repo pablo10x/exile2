@@ -321,17 +321,14 @@ namespace core.player
         /// <param name="sk">The skin to apply</param>
         /// <param name="items">Optional list of items to equip</param>
         [Button("Build")]
-        public void BuildCharacter(characterskin sk, List<ItemCloth> items = null)
-        {
-            if (items != null)
-            {
-                foreach (var item in items)
-                {
+        public void TestBuildCharacter(characterskin sk, List<ItemCloth> items = null) {
+            if (items != null) {
+                foreach (var item in items) {
                     EquipItem(item);
                 }
             }
 
-            SetSkin(sk,true);
+            SetSkin(sk, true);
         }
 
         /// <summary>

@@ -16,7 +16,32 @@ MonoBehaviour:
   defaultcharacterSkin: {fileID: 11400000, guid: c2f51f31243503e4392a6da701676f80,
     type: 2}
   characterSkins: []
-  playerSpeed: 5
+  TPP_CamSensitivity: 0.2
+  TPP_FollowPointFraming: {x: 0.4, y: 0}
+  TPP_FollowingSharpness: 10000
+  TPP_DefaultDistance: 2.5
+  TPP_MinDistance: 1
+  TPP_MaxDistance: 2.06
+  TPP_DistanceMovementSpeed: 5
+  TPP_DistanceMovementSharpness: 10
+  TPP_DefaultVerticalAngle: 12.3
+  TPP_MinVerticalAngle: -70.7
+  TPP_MaxVerticalAngle: 59.1
+  TPP_RotationSpeed: 1
+  TPP_RotationSharpness: 10000
+  FPP_CamSensitivity: 0.2
+  FPP_FollowPointFraming: {x: 0, y: 0}
+  FPP_FollowingSharpness: 10000
+  FPP_DefaultDistance: 1.22
+  FPP_MinDistance: 0.47
+  FPP_MaxDistance: 0
+  FPP_DistanceMovementSpeed: 5
+  FPP_DistanceMovementSharpness: 10
+  FPP_DefaultVerticalAngle: 20
+  FPP_MinVerticalAngle: -90
+  FPP_MaxVerticalAngle: 90
+  FPP_RotationSpeed: 1
+  FPP_RotationSharpness: 10000
   itemVariationColor_common: {r: 0.61960787, g: 0.61960787, b: 0.61960787, a: 0.5882353}
   itemVariationColor_uncommon: {r: 0.29803923, g: 0.6862745, b: 0.3137255, a: 0.5882353}
   itemVariationColor_rare: {r: 0.12941177, g: 0.5882353, b: 0.9529412, a: 0.5882353}
@@ -24,3 +49,6 @@ MonoBehaviour:
   itemVariationColor_legendary: {r: 1, g: 0.59607846, b: 0, a: 0.5882353}
   itemVariationColor_mythic: {r: 0.95686275, g: 0.2627451, b: 0.21176471, a: 0.5882353}
   itemVariationColor_exotic: {r: 0, g: 0.7372549, b: 0.83137256, a: 0.5882353}
+  stone_respawnTime: 5
+  stone_maxQuantity: 5
+  stone_coolDown: 7.28
