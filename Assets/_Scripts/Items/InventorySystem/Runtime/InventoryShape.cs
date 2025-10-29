@@ -46,12 +46,20 @@ namespace Exile.Inventory
         /// <summary>
         /// Returns the width of the shapes bounding box
         /// </summary>
-        public int width => _width;
+       // public int width => _width;
+
+        public int width {
+            get => _width;
+            set => _width = value;
+        }
 
         /// <summary>
         /// Returns the height of the shapes bounding box
         /// </summary>
-        public int height => _height;
+        public int height {
+            get => _height;
+            set => _height = value;
+        }
 
         /// <summary>
         /// Returns true if given local point is part of this shape

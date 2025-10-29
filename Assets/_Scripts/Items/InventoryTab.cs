@@ -17,6 +17,9 @@ namespace Exile.Inventory {
         [FoldoutGroup("items")] public List<ItemBase> itemz = new List<ItemBase>();
 
         // test
+        public bool AutoCreate = true;
+        
+        
         public        InventoryManager    InventoryManager;
         public        string              Equipment_name;
         public        InventoryRenderMode _renderMode             = InventoryRenderMode.Grid;
@@ -69,7 +72,7 @@ namespace Exile.Inventory {
 
             var it = _item.CreateInstance();
             if (InventoryManager != null) {
-                if (InventoryManager.TryAdd(it)) {
+                if (InventoryManager.TryAddWithRotation(it)) {
                   
                 }
                
@@ -78,7 +81,9 @@ namespace Exile.Inventory {
         }
 
         private void Start() {
-            //   CreateTab("tab", rows, _renderMode,ItemType.Any,TabType);
+            if (AutoCreate) {
+                createtab();
+            }
         }
 
         [Button("Add random item")]

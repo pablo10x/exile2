@@ -8,6 +8,9 @@ public class GlobalDataSO : ScriptableObject {
     [FoldoutGroup("Character")] public characterskin   defaultcharacterSkin;
     public                             characterskin[] characterSkins;
 
+    
+    
+    
     //Character Camera framing / zooming Settings
     [FoldoutGroup("Camera Settings")]
 
@@ -43,6 +46,9 @@ public class GlobalDataSO : ScriptableObject {
 
     // Loot Rarity Colors
 
+
+    [FoldoutGroup("InventoryItemData")] public Material FontTextMaterial;
+    
     [FoldoutGroup("ItemsColors")]
     // Loot Rarity Colors
     public Color itemVariationColor_common;

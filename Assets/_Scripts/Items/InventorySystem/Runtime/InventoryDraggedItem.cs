@@ -40,7 +40,7 @@ namespace Exile.Inventory
 
         private readonly Canvas _canvas;
         private readonly RectTransform _canvasRect;
-        private readonly Image _image;
+        internal readonly Image _image;
         private Vector2 _offset;
 
         /// <summary>

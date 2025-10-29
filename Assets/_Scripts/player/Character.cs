@@ -90,7 +90,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     private Quaternion _targetReconcileRotation;
     private bool       _isReconciling;
     private float      _reconcileStartTime;
-    public Quaternion _replicatedCameraRotation = Quaternion.identity;
+    public  Quaternion _replicatedCameraRotation = Quaternion.identity;
 
     /// <summary>
     /// Input data that gets sent from client to server every tick
@@ -178,7 +178,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     #region Events
 
     public event Action<CharacterState> OnCharacterStateChanged;
-    public event Action<Collider> onCharacterDetectCollider;
+    public event Action<Collider>       onCharacterDetectCollider;
 
     #endregion
 
@@ -633,14 +633,13 @@ public class Character : TickNetworkBehaviour, ICharacterController {
                 playerCar = nearbyVehicle;
             }
         }
-        
+
         //check for interactable objects
 
         int miningLayer = LayerMask.NameToLayer("Interactable");
 
         if (hitCollider.gameObject.layer == miningLayer) {
             onCharacterDetectCollider?.Invoke(hitCollider);
-         
         }
     }
 
@@ -652,121 +651,80 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
 
-    public void OnDiscreteCollisionDetected(Collider hitCollider) {
-
-       
-    }
+    public void OnDiscreteCollisionDetected(Collider hitCollider) { }
 
     #endregion
 
     #region Movement State Management
 
-    private void UpdateMovementStatex(Vector2 directions) {
+
+
+    private void UpdateMovementState(Vector2 directions) {
+        // Handle falling (highest priority)
         if (!motor.GroundingStatus.IsStableOnGround && !isJumping) {
             if (CurrentCharacterState != CharacterState.Falling) {
                 CurrentCharacterState = CharacterState.Falling;
             }
-
             return;
         }
 
+        // Don't change state while jumping
         if (isJumping) return;
-        if (CurrentCharacterState is CharacterState.InVehicleDriver or CharacterState.InVehiclePassenger) return;
 
+        // Don't change state while in vehicle
+        if (CurrentCharacterState is CharacterState.InVehicleDriver or CharacterState.InVehiclePassenger)
+            return;
+
+        // Handle crouched state separately
         if (CurrentCharacterState == CharacterState.Crouched) {
             if (directions.magnitude > 0.2f) {
-                pa.UpdateCrouchAnimation(new Vector2(_lastHorizontal, _lastVertical));
+                MaxStableMoveSpeed = CROUCH_SPEED;
+                pa.UpdateCrouchAnimation(new Vector2(directions.x, directions.y));
                 useInputForRotation = directions.y > 0.4f;
-            }
-            else {
+            } else {
+                MaxStableMoveSpeed  = 0f;
                 useInputForRotation = false;
                 pa.resetCrouchAnimation();
                 pa.PlayAnimation(pa.crouch_idle, 0.3f);
             }
-
             return;
         }
 
-        // Determine new state from input
-        if (directions.magnitude < 0.1f && CurrentCharacterState != CharacterState.Idle) {
-            SetState(CharacterState.Idle);
+        // Movement state determination
+        float inputMagnitude = directions.magnitude;
+
+        // IDLE: No significant input
+        if (inputMagnitude < 0.1f) {
+            if (CurrentCharacterState != CharacterState.Idle) {
+                SetState(CharacterState.Idle);
+            }
             return;
         }
 
-        if (directions.magnitude > 0.2f && directions.magnitude <= 0.8f || directions.y < 0.8f) {
-            if (!isJumping) pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal, _lastVertical));
-            if (useInputForRotation) useInputForRotation = false;
-             SetState(CharacterState.Strafe);
+        // RUNNING: Strong forward input
+        if (directions.y > 0.5f && inputMagnitude > 0.2f) {
+            if (CurrentCharacterState != CharacterState.Running) {
+                SetState(CharacterState.Running);
+            }
+            return;
         }
 
-        if (directions.y > 0.4f) {
-            SetState(CharacterState.Running);
-        }
-    }
-private void UpdateMovementState(Vector2 directions) {
-    // Priority 1: Handle falling (highest priority)
-    if (!motor.GroundingStatus.IsStableOnGround && !isJumping) {
-        if (CurrentCharacterState != CharacterState.Falling) {
-            CurrentCharacterState = CharacterState.Falling;
-        }
-        return;
-    }
+        // STRAFE: Any other movement (walking, side movement, backward)
+        if (inputMagnitude > 0.1f) {
+            if (CurrentCharacterState != CharacterState.Strafe) {
+                SetState(CharacterState.Strafe);
+            }
 
-    // Priority 2: Don't change state while jumping
-    if (isJumping) return;
-    
-    // Priority 3: Don't change state while in vehicle
-    if (CurrentCharacterState is CharacterState.InVehicleDriver or CharacterState.InVehiclePassenger) 
-        return;
+            // Update strafe animation every frame when in strafe state
+            if (!isJumping) {
+                pa.UpdateStrafeAnimation(new Vector2(directions.x, directions.y));
+            }
 
-    // Priority 4: Handle crouched state separately
-    if (CurrentCharacterState == CharacterState.Crouched) {
-        if (directions.magnitude > 0.2f) {
-            pa.UpdateCrouchAnimation(new Vector2(_lastHorizontal, _lastVertical));
+            // Only use input for rotation when moving forward significantly
             useInputForRotation = directions.y > 0.4f;
         }
-        else {
-            useInputForRotation = false;
-            pa.resetCrouchAnimation();
-            pa.PlayAnimation(pa.crouch_idle, 0.3f);
-        }
-        return;
     }
 
-    // Priority 5: Movement state determination
-    float inputMagnitude = directions.magnitude;
-    
-    // IDLE - No significant input
-    if (inputMagnitude < 0.1f) {
-        if (CurrentCharacterState != CharacterState.Idle) {
-            SetState(CharacterState.Idle);
-        }
-        return;
-    }
-
-    // RUNNING - Strong forward input
-    if (directions.y > 0.8f && inputMagnitude > 0.8f) {
-        if (CurrentCharacterState != CharacterState.Running) {
-            SetState(CharacterState.Running);
-        }
-        return;
-    }
-
-    // STRAFE - Any other movement (walking, side movement, backward)
-    if (inputMagnitude > 0.1f) {
-        if (CurrentCharacterState != CharacterState.Strafe) {
-            SetState(CharacterState.Strafe);
-        }
-        
-        // Update strafe animation every frame when in strafe state
-        if (!isJumping) {
-            pa.UpdateStrafeAnimation(new Vector2(_lastHorizontal, _lastVertical));
-        }
-        
-        // Only use input for rotation when moving forward significantly
-        useInputForRotation = directions.y > 0.4f;
-    }
-}
     private void SetState(CharacterState newState) {
         if (CurrentCharacterState == newState) {
             Debug.LogError("calling setstate on same state");
@@ -1208,10 +1166,15 @@ private void UpdateMovementState(Vector2 directions) {
             UiManager.Instance.OnCardoorPassangerButtonClicked += OnCardoorPassangerClicked;
             UiManager.Instance.OnCardoorExitButtonClicked      += OnCardoorExitClicked;
             UiManager.Instance.OnJumpPressed                   += OnJumpButtonPressed;
+            UiManager.Instance.OnCrouchPressed                 += OnCrouchPressed;
             UiManager.Instance.SetupEventListeners();
 
             GameManager.Instance.DisableMainCamera();
         }
+    }
+
+    private void OnCrouchPressed() {
+        _crouchTogglePressed = true;
     }
 
     private void OnDestroy() {

@@ -84,7 +84,8 @@ MonoBehaviour:
   - {fileID: -1878332245247344467}
   - {fileID: 8270378611193092979}
   - {fileID: -1275206788982054386}
-  m_RendererFeatureMap: adc0de57c6d2eee5731b274e8749c6720ee28e872e8e4dee
+  - {fileID: 4800261388555312207}
+  m_RendererFeatureMap: adc0de57c6d2eee5731b274e8749c6720ee28e872e8e4dee4fdcdccd4cf49d42
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -110,6 +111,21 @@ MonoBehaviour:
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
+--- !u!114 &4800261388555312207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8e1eeeaa7fba944fb8e39c0af65b268, type: 3}
+  m_Name: TranslucentImageBlurSource
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  renderOrder: 0
+  canvasDisappearWorkaround: 0
 --- !u!114 &8270378611193092979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,12 +138,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1614fc811f8f184697d9bee70ab9fe5, type: 3}
   m_Name: DecalRendererFeature
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   m_Settings:
-    technique: 0
+    technique: 2
     maxDrawDistance: 1000
     decalLayers: 0
     dBufferSettings:
       surfaceData: 2
     screenSpaceSettings:
-      normalBlend: 0
+      normalBlend: 1

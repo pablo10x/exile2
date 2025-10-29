@@ -4,6 +4,7 @@ namespace Exile.Inventory
     {
         Any,
         Weapons,
+        MeleWeapons,
         Clothing,
         Food,
     }

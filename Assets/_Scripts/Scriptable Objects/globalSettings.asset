@@ -17,16 +17,16 @@ MonoBehaviour:
     type: 2}
   characterSkins: []
   TPP_CamSensitivity: 0.2
-  TPP_FollowPointFraming: {x: 0.4, y: 0}
+  TPP_FollowPointFraming: {x: 0.09, y: 0.05}
   TPP_FollowingSharpness: 10000
   TPP_DefaultDistance: 2.5
   TPP_MinDistance: 1
-  TPP_MaxDistance: 2.06
+  TPP_MaxDistance: 3.15
   TPP_DistanceMovementSpeed: 5
   TPP_DistanceMovementSharpness: 10
-  TPP_DefaultVerticalAngle: 12.3
-  TPP_MinVerticalAngle: -70.7
-  TPP_MaxVerticalAngle: 59.1
+  TPP_DefaultVerticalAngle: -67
+  TPP_MinVerticalAngle: -46
+  TPP_MaxVerticalAngle: 62
   TPP_RotationSpeed: 1
   TPP_RotationSharpness: 10000
   FPP_CamSensitivity: 0.2
@@ -42,6 +42,7 @@ MonoBehaviour:
   FPP_MaxVerticalAngle: 90
   FPP_RotationSpeed: 1
   FPP_RotationSharpness: 10000
+  FontTextMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
   itemVariationColor_common: {r: 0.61960787, g: 0.61960787, b: 0.61960787, a: 0.5882353}
   itemVariationColor_uncommon: {r: 0.29803923, g: 0.6862745, b: 0.3137255, a: 0.5882353}
   itemVariationColor_rare: {r: 0.12941177, g: 0.5882353, b: 0.9529412, a: 0.5882353}

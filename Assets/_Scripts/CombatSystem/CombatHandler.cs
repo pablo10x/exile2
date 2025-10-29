@@ -8,8 +8,8 @@ using Random = UnityEngine.Random;
 
 namespace core.player {
     public class CombatHandler : NetworkBehaviour {
-        private Character      _character;
-        private PlayerAnimator _playerAnimator;
+        [SerializeField] private Character      _character;
+       [SerializeField] private PlayerAnimator _playerAnimator;
 
         private float meleCeooldown = 0.3f;
 

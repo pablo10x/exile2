@@ -25,8 +25,7 @@ namespace core.Managers {
 
         [FormerlySerializedAs("player"), FormerlySerializedAs("playerController")] public Character character;
 
-        [FoldoutGroup("Debug")] public Transform tempSpawnPos;
-        [FoldoutGroup("Debug")] public bool      ShouldSpawnPlayer = true;
+    
 
         #region events
 
@@ -38,10 +37,9 @@ namespace core.Managers {
             Application.runInBackground = true;
 
 
-            if (ShouldSpawnPlayer && tempSpawnPos != null)
-                SpawnPlayer(tempSpawnPos.position, tempSpawnPos.rotation);
+           
             //fps
-            Application.targetFrameRate = 90;
+            Application.targetFrameRate = 60;
 
             // load quality settings
             GraphicManager.Instance.LoadSettings();
@@ -49,22 +47,7 @@ namespace core.Managers {
             //SpawnPlayer(tempSpawnPos.position, tempSpawnPos.rotation);
         }
 
-        public async void SpawnPlayer(Vector3 position, Quaternion rotation) {
-            if (playerPrefab is null) return;
-
-            // Load the Addressable Asset asynchronously
-            PlayerPrefabHandler = playerPrefab.InstantiateAsync(position, rotation);
-            if (defaultCamera != null)
-                defaultCamera.gameObject.SetActive(false);
-
-            await PlayerPrefabHandler.Task;
-            character = PlayerPrefabHandler.Result.GetComponent<Character>();
-            character.GetComponent<CharacterEquipmentManager>()
-                     .SetSkin(GlobalConfig.defaultcharacterSkin, false);
-            // character.GetComponent<CharacterEquipmentManager>()
-            //          .BuildCharacter(GlobalConfig.defaultcharacterSkin);
-            OnPlayerSpawned?.Invoke();
-        }
+       
 
         public void DisableMainCamera() {
             if (defaultCamera != null)
@@ -76,22 +59,9 @@ namespace core.Managers {
                 defaultCamera.gameObject.SetActive(true);
         }
 
-        [Button("Respawn Player")]
-        public void ResPawnPlayer() {
-            if (character is null) return;
-            defaultCamera.gameObject.SetActive(true);
-            character.orbitCamera.gameObject.SetActive(false);
-            Destroy(character.orbitCamera.gameObject, 10f);
-            Destroy(character.gameObject, 10f);
-            SpawnPlayer(tempSpawnPos.position, tempSpawnPos.rotation);
-        }
+  
 
-        [Button("Assign Skin")]
-        public void AssignSkin() {
-            if (character is null) return;
-            character.GetComponent<CharacterEquipmentManager>()
-                     .SetSkin(GlobalConfig.defaultcharacterSkin, false);
-        }
+        
 
         public bool IsLobbySceneLoaded() {
             return _sceneLoadHandle.IsValid();

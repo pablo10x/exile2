@@ -296,6 +296,71 @@ public class InventoryManager : IInventoryManager {
         Vector2Int point;
         return GetFirstPointThatFitsItem(item, out point) && TryAddAt(item, point);
     }
+    /// <summary>
+/// Attempts to add an item to the inventory, trying both normal and rotated orientations.
+/// If the item doesn't fit normally but fits when rotated, it will be marked as rotated.
+/// </summary>
+/// <param name="item">The item to add</param>
+/// <returns>True if the item was successfully added (in either orientation)</returns>
+public bool TryAddWithRotation(IInventoryItem item) {
+    if (!_AllowAddingitems) {
+        Debug.LogWarning("items can't be added because inventory is blocked");
+        OnInventoryBlocked?.Invoke(item);
+        return false;
+    }
+
+    if (_provider.isInventoryFull) {
+        Debug.LogWarning("items can't be added because inventory is full");
+        return false;
+    }
+
+    // Store original dimensions
+    int originalWidth = item.width;
+    int originalHeight = item.height;
+    bool originalRotated = item.Rotated;
+
+    try {
+        // First, try adding in normal orientation
+        item.Rotated = false;
+        item.width = originalWidth;
+        item.height = originalHeight;
+
+        Vector2Int point;
+        if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
+            if (TryAddAt(item, point)) {
+                return true;
+            }
+        }
+
+        // If normal orientation failed, try rotated orientation
+
+        
+        item.width = originalHeight;  // Swap dimensions
+        item.height = originalWidth;
+        item.Rotated = true;
+        if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
+            if (TryAddAt(item, point)) {
+               
+                return true;
+            }
+        }
+
+        // Both orientations failed, restore original state
+        item.width = originalWidth;
+        item.height = originalHeight;
+        item.Rotated = originalRotated;
+        return false;
+    }
+    catch (Exception e) {
+        // Restore original state on error
+        item.width = originalWidth;
+        item.height = originalHeight;
+        item.Rotated = originalRotated;
+        
+        Debug.LogWarning($"Error adding item with rotation: {e}");
+        return false;
+    }
+}
 
     /// <inheritdoc />
     public bool CanSwap(IInventoryItem item) {

@@ -99,7 +99,7 @@ public class MiningNode : NetworkBehaviour , IInteractable
     // Called when quantity changes (on all clients)
     private void OnQuantityChanged(int oldValue, int newValue, bool asServer)
     {
-        Debug.Log($"Mining node quantity changed from {oldValue} to {newValue}");
+        
         UpdateVisuals();
     }
 

@@ -101,6 +101,16 @@ namespace Exile.Inventory
                     offset
                 );
 
+                if (_draggedItem.item.Rotated) {
+                    _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
+                    
+                }
+                else {
+                    _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
+                }
+
+                _draggedItem._image.rectTransform.sizeDelta = new Vector2(_draggedItem._image.rectTransform.sizeDelta.x /1.3f, _draggedItem._image.rectTransform.sizeDelta.y /1.3f);
+               
                 // Remove the item from inventory
                 inventory.TryRemove(_itemToDrag);
 
@@ -116,7 +126,7 @@ namespace Exile.Inventory
                 if (_draggedItem != null)
                 {
                     // Update the items position
-                    //_draggedItem.Position = eventData.position;
+                   // _draggedItem.position = eventData.position;
                 }
             }
 
@@ -212,8 +222,32 @@ namespace Exile.Inventory
                 }
                 else {
                     
+                     //check if user clicked item rotate
+                     if (Input.GetKeyDown(KeyCode.Space)) {
+                     
+                         
+                         if (!_draggedItem.item.Rotated) {
+                             var h = _draggedItem.item.height;
+                             var w = _draggedItem.item.width;
+                             _draggedItem.item.height = w;
+                             _draggedItem.item.width  = h;
+                             _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
+                             _draggedItem.item.Rotated = true;
+                         }
+                         else {
+                             var h = _draggedItem.item.width;
+                             var w = _draggedItem.item.height;
+                             _draggedItem.item.height = h;
+                             _draggedItem.item.width  = w;
+                             _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
+                             _draggedItem.item.Rotated = false;
+                         }
+                         // if(_draggedItem.item.Rotated)
+                         //  _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
+                         // else _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
+                     }
+                    
                     // Update position while dragging
-                  
                     _draggedItem.position = _currentEventData.position;
                 }
             }

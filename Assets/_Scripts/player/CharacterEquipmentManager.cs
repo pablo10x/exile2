@@ -6,8 +6,10 @@ using System.Reflection;
 using core.Managers;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
+using FishNet.Object;
 using MTAssets.SkinnedMeshCombiner;
 using Sirenix.OdinInspector;
+using UniRx;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
@@ -44,7 +46,7 @@ namespace core.player
         public SkinnedMeshRenderer skinnedMesh;
     }
 
-    [RequireComponent(typeof(SkinnedMeshCombiner))] public class CharacterEquipmentManager : MonoBehaviour
+ public class CharacterEquipmentManager : NetworkBehaviour
     {
         #region CharacterBodyParts
 
@@ -67,13 +69,7 @@ namespace core.player
 
         #endregion
 
-        #region Character Rig Data
-
-        [FoldoutGroup("Rig Data")] public SkinnedMeshRenderer baseRigRenderer;
-        [FoldoutGroup("Rig Data")] public SkinnedMeshRenderer ClothingRigRederer;
-
-        #endregion
-
+    
         public                              ItemCloth[]               dummyitem;
         public                              List<ClothingPlaceHolder> _ClothingPlaceHolder;
         private                             List<ItemCloth>           equiped_clothes = new List<ItemCloth>();
@@ -82,10 +78,32 @@ namespace core.player
 
         private void Awake()
         {
-            SetSkin(GameManager.Instance.GlobalConfig.defaultcharacterSkin, false);
+            //
+        }
+
+        public override void OnStartClient() {
+            base.OnStartClient();
+            SetSkin(defaultskin, false);
+
+         
+            Observable.Timer(TimeSpan.FromSeconds(15))
+                      .Subscribe(_ => { CombineMeshes(); })
+                      .AddTo(this); // Optional: Tie the subscription to this GameObject's lifecycl
+         
         }
 
         
+       public  void CombineMeshes() {
+           // if (Combiner.isMeshesCombined()) Combiner.UndoCombineMeshes(true, true);
+            //if (!Combiner.isMeshesCombined()) Combiner.CombineMeshes();
+           // EquipDummyItems();
+        }
+
+        private void Start() {
+            // SetSkin(GameManager.Instance.GlobalConfig.defaultcharacterSkin, true);
+           
+        }
+
         [Button("Assign parts")]
         private void AutoAssignBodyParts()
         {
@@ -257,7 +275,7 @@ namespace core.player
         /// Equips a clothing item
         /// </summary>
         /// <param name="item">The item to equip</param>
-        public void EquipItem(ItemCloth item)
+        private void EquipItem(ItemCloth item)
         {
             if (equiped_clothes.Contains(item)) return;
 
@@ -282,6 +300,7 @@ namespace core.player
         /// Sets the character's skin
         /// </summary>
         /// <param name="skin">The skin to apply</param>
+        /// <param name="Combine"> should we combine the mesh after setting the skin</param>
         /// 
         [Button("Setskin")]
         public void SetSkin(characterskin skin, bool Combine)
@@ -315,22 +334,7 @@ namespace core.player
             Feet.sharedMesh            = skin.Feet;
         }
 
-        /// <summary>
-        /// Builds the character with the given skin and optional items
-        /// </summary>
-        /// <param name="sk">The skin to apply</param>
-        /// <param name="items">Optional list of items to equip</param>
-        [Button("Build")]
-        public void TestBuildCharacter(characterskin sk, List<ItemCloth> items = null) {
-            if (items != null) {
-                foreach (var item in items) {
-                    EquipItem(item);
-                }
-            }
-
-            SetSkin(sk, true);
-        }
-
+  
         /// <summary>
         /// Sets the material for all character body parts
         /// </summary>

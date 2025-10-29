@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using Animancer;
 using core.Managers;
+using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace core.player {
-    public class PlayerAnimator : MonoBehaviour {
+    public class PlayerAnimator : NetworkBehaviour {
         #region Fields
 
         //get player
@@ -262,8 +263,10 @@ namespace core.player {
            
             _lastStrafeClip = null;
         }
+
         public void UpdateStrafeAnimation(Vector2 Directions) {
-            
+
+           
             var strafeType = _strafe_directionalAnimationSet.Snap(Directions);
             var clip       = _strafe_directionalAnimationSet.Get(strafeType);
 

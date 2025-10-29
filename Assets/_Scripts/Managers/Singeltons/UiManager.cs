@@ -72,6 +72,8 @@ namespace core.Managers {
         //  [FoldoutGroup("Controller")] [FoldoutGroup("Controller/Player")] public VariableJoystick joystick;
         [FoldoutGroup("Controller")] public UltimateJoystick ultimateJoystick;
         [FoldoutGroup("Controller/Player")]                              public Button           PlayerJump;
+        [FoldoutGroup("Controller/Player")]                              public Button           PlayerCrouch;
+        [FoldoutGroup("Controller/Player")]                              public Button           FPP_TPP;
         [FoldoutGroup("Controller/Vehicle")]                             public Button           cardoorEnterDriver;
         [FoldoutGroup("Controller/Vehicle")]                             public Button           cardoorEnterPassanger;
         [FoldoutGroup("Controller/Vehicle")]                             public Button           cardoorExit;
@@ -162,7 +164,10 @@ namespace core.Managers {
         public event Action OnCardoorExitButtonClicked;
 
         public event Action OnJumpPressed;
+        public event Action OnCrouchPressed;
 
+        public event Action onFPP_TPPClicked;
+        
         #endregion
 
         #endregion
@@ -524,7 +529,10 @@ namespace core.Managers {
             cardoorExit.onClick.AddListener(() => OnCardoorExitButtonClicked?.Invoke());
 
             PlayerJump.onClick.AddListener(() => OnJumpPressed?.Invoke());
-         
+            PlayerCrouch.onClick.AddListener(() => OnCrouchPressed?.Invoke());
+            
+            //fpp tpp mode
+            FPP_TPP.onClick.AddListener(() => onFPP_TPPClicked?.Invoke());
         }
 
         /// <summary>

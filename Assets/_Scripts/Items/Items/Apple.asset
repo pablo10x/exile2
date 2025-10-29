@@ -12,16 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee6dfe7d3053f274a966c385ad33f603, type: 3}
   m_Name: Apple
   m_EditorClassIdentifier: 
-  _sprite: {fileID: 1665695666, guid: 4ba573d704872be428350bdb981e7b34, type: 3}
+  _sprite: {fileID: 21300000, guid: ce2ea33c92fba2c41a5a7dfcac87c9de, type: 3}
   _shape:
     _width: 1
     _height: 1
     _shape: 01
-  _type: 3
+  _type: 4
+  _tier: 0
+  _Stackable: 1
+  _maxQuantity: 5
+  _quantity: 1
   _canDrop: 1
   _position: {x: 0, y: 0}
   Name: Apple
+  _iscontainer: 0
   container_shape:
-    _width: 0
-    _height: 0
-    _shape: 
+    _width: 1
+    _height: 1
+    _shape: 00

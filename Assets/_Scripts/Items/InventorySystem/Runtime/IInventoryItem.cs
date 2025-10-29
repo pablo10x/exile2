@@ -30,17 +30,20 @@ namespace Exile.Inventory
         /// <summary>
         /// The width of this item
         /// </summary>
-        int width { get; }
+        int width { get; set; }
 
         ItemTier ItemTier { get;  } // 👈 enum in interface
        
 
+        bool Stackable { get; }
+        int maxQuantity { get; }
+        int Quantity { get; }
         
         
         /// <summary>
         /// The height of this item
         /// </summary>
-        int height { get; }
+        int height { get; set; }
 
         /// <summary>
         /// Returns true if given local position is part 
@@ -52,6 +55,10 @@ namespace Exile.Inventory
         /// Returns true if this item can be dropped on the ground
         /// </summary>
         bool canDrop { get; }
+
+
+        bool Rotated { get; set; }
+        
     }
 
     internal static class InventoryItemExtensions

@@ -121,6 +121,14 @@ public class CharacterCam : MonoBehaviour {
         if (_character != null) {
             _character.OnCharacterStateChanged += OnCharacterStateChanged;
         }
+
+        if (UiManager.Instance != null) {
+            UiManager.Instance.onFPP_TPPClicked += onFPP_TPPClicked;
+        }
+    }
+
+    private void onFPP_TPPClicked() {
+        useFPP = !useFPP;
     }
 
     /// <summary>
@@ -225,34 +233,10 @@ public class CharacterCam : MonoBehaviour {
                 break;
             
             case Character.CharacterState.Crouched:
-                desiredLocalPosition = new Vector3(0.0005719915f, 1.04f, 0.1516497f);
-                // camTarget.gameObject.transform.localPosition = desiredLocalPosition;
-                camTarget.gameObject.transform.DOLocalMove(desiredLocalPosition, 0.4f,false);
-                
-             //   camTarget.gameObject.transform.localPosition = Vector3.Slerp(camTarget.gameObject.transform.localPosition, desiredLocalPosition, smoothSpeed * Time.deltaTime);
-                
-                // camTarget.gameObject.transform.localPosition = Vector3.SmoothDamp(camTarget.gameObject.transform.localPosition,
-                //                                                                   desiredLocalPosition,
-                //                                                                   ref velocity,
-                //                                                                   1f / smoothSpeed // smoothTime (inverse of speed)
-                // );
-
-                Debug.Log($"Updating cam target crouched");
+                camTarget.gameObject.transform.DOLocalMove(new Vector3(0.0005719915f, 1.04f, 0.1516497f), 0.4f,false);
                 break;
             default:
-                //check if he exited a car
-                //todo remove the collider
-
-                desiredLocalPosition = new Vector3(0.034f, 1.755f, 0.214f);
-                camTarget.gameObject.transform.DOLocalMove(desiredLocalPosition, 0.4f,false);
-                camTarget.gameObject.transform.localPosition = Vector3.Slerp(camTarget.gameObject.transform.localPosition, desiredLocalPosition, smoothSpeed * Time.deltaTime);
-                // camTarget.gameObject.transform.localPosition = desiredLocalPosition;
-                // camTarget.gameObject.transform.localPosition = Vector3.SmoothDamp(camTarget.gameObject.transform.localPosition,
-                //                                                                   desiredLocalPosition,
-                //                                                                   ref velocity,
-                //                                                                   1f / smoothSpeed // smoothTime (inverse of speed)
-                // );
-                Debug.Log($"Updating cam target normal");
+                camTarget.gameObject.transform.DOLocalMove(new Vector3(0.034f, 1.56f, 0.214f), 0.4f,false);
                 updateCamSettings();
                 FollowTransform = _character.cameraTarget;
                 cameraState     = CameraState.Character;
@@ -260,6 +244,10 @@ public class CharacterCam : MonoBehaviour {
         }
     }
 
+
+   
+    
+    
     [Button("Update Character Camera")]
     public void updateCamSettings() {
         
