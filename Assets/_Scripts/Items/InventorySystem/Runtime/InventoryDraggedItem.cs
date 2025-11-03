@@ -40,7 +40,7 @@ namespace Exile.Inventory
 
         private readonly Canvas _canvas;
         private readonly RectTransform _canvasRect;
-        internal readonly Image _image;
+        internal Image _image;
         private Vector2 _offset;
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Exile.Inventory
                 {
                     item.position = currentController.ScreenToGrid(value + _offset + GetDraggedItemOffset(currentController.inventoryRenderer, item));
                     var canAdd = currentController.inventory.CanAddAt(item, item.position) || CanSwap();
-                    currentController.inventoryRenderer.SelectItem(item, !canAdd, Color.white);
+                    currentController.inventoryRenderer.SelectItem(item, !canAdd, Color.white,ref _image);
                 }
 
                 // Slowly animate the item towards the center of the mouse pointer
@@ -149,12 +149,15 @@ namespace Exile.Inventory
                 currentController.inventoryRenderer.ClearSelection();
             }
             else
-            {
-                mode = DropMode.Dropped;
-                if (!originalController.inventory.TryForceDrop(item)) // Drop the item on the ground
-                {
-                    originalController.inventory.TryAddAt(item, originPoint);
-                }
+             {
+                 originalController.inventory.TryAddAt(item, originPoint); // Return the item to its previous location
+                 mode = DropMode.Returned;
+                 
+            //     mode = DropMode.Dropped;
+            //     if (!originalController.inventory.TryForceDrop(item)) // Drop the item on the ground
+            //     {
+            //         originalController.inventory.TryAddAt(item, originPoint);
+            //     }
             }
 
             // Destroy the image representing the item

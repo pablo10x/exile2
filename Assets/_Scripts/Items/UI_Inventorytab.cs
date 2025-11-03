@@ -29,7 +29,7 @@ namespace Inventory {
 
         private void Start() {
             /*if (item_tocreate != null){
-            CreateTab(item_tocreate);
+            CreateInventoryView(item_tocreate);
         }*/
         }
 
@@ -39,10 +39,10 @@ namespace Inventory {
         }
 
         /// <summary>
-        /// Creates Ui grid tab based on a clothing item
+        /// Creates Ui grid view based on a clothing item
         /// </summary>
         /// <param name="_item aka the container"></param>
-        /// <returns>return gameobject of the ui tab ( to be able to destroy )</returns>
+        /// <returns>return gameobject of the ui view ( to be able to destroy )</returns>
         public GameObject CreateTab(ref ItemBase _item) {
             if (!_item.isContainer) {
                 Debug.LogError("item is not container ");

@@ -10,23 +10,33 @@ namespace Exile.Inventory {
     /// </summary>
     [CreateAssetMenu(fileName = "Item", menuName = "Inventory/Item", order = 1)]
     public class ItemBase : ScriptableObject, IInventoryItem {
-        [PreviewField(150, ObjectFieldAlignment.Center)] [SerializeField] private Sprite         _sprite      = null;
-        [SerializeField]                                                  private InventoryShape _shape       = null;
-        [SerializeField]                                                  private ItemType       _type        = ItemType.Any;
-        [SerializeField]                                                  private ItemTier       _tier        = ItemTier.Common;
+        [PreviewField(150, ObjectFieldAlignment.Center)] [SerializeField] private Sprite         _sprite = null;
+        [SerializeField]                                                  private InventoryShape _shape  = null;
+        [SerializeField]                                                  private ItemType       _type   = ItemType.Any;
+        [SerializeField]                                                  private ItemTier       _tier   = ItemTier.Common;
         //stacking
-        [BoxGroup("Stacking")] [SerializeField]                                                  private bool           _Stackable   = false;
-        [BoxGroup("Stacking")] [ShowIf("Stackable")] [SerializeField]                            private int            _maxQuantity = 1;
-        [BoxGroup("Stacking")] [ShowIf("Stackable")] [SerializeField]                            private int            _quantity    = 1;
-        
-        
-        [SerializeField]                                                  private bool           _canDrop     = true;
-        [SerializeField, HideInInspector]                                 private Vector2Int     _position    = Vector2Int.zero;
+        [BoxGroup("Stacking")] [SerializeField]                       private bool _Stackable   = false;
+        [BoxGroup("Stacking")] [ShowIf("Stackable")] [SerializeField] private int  _maxQuantity = 1;
+        [BoxGroup("Stacking")] [ShowIf("Stackable")] [SerializeField] private int  _quantity    = 1;
+
+        [BoxGroup("Durability")]                            public bool  _useDurability;
+        [BoxGroup("Durability")] [ShowIf("_useDurability")] public float _Durability;
+        [BoxGroup("Durability")] [ShowIf("_useDurability")] public float Max_Durability;
+
+        [SerializeField]                  private bool       _canDrop  = true;
+        [SerializeField, HideInInspector] private Vector2Int _position = Vector2Int.zero;
 
         /// <summary>
         /// The name of the item
         /// </summary>
         public string Name;
+
+        /// <summary>
+        /// The unique Id of the item
+        /// </summary>
+        [ReadOnly]
+        [ShowInInspector]
+        public int Id { get; set; }
 
         /// <summary>
         /// The type of the item
@@ -88,7 +98,13 @@ namespace Exile.Inventory {
 
         public bool Rotated { get; set; }
 
-        
+        public bool  useDurability => _useDurability;
+        public float MaxDurability => Max_Durability;
+
+        public float Durability {
+            get => _Durability;
+            set => _Durability = Mathf.Clamp(value, 0, Max_Durability);
+        }
 
         /// <summary>
         /// Creates a copy if this scriptable object

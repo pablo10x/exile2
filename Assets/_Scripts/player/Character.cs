@@ -1128,7 +1128,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     public override void OnStopClient() {
         base.OnStopClient();
-        if (IsOwner)
+        if (IsOwner && GameManager.Instance != null)
             GameManager.Instance.EnableMainCamera();
     }
 

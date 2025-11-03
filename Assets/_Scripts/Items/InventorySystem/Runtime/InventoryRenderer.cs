@@ -60,8 +60,8 @@ namespace Exile.Inventory {
                 // bgImage.raycastTarget = false;
 
                 // Create text for item name
-                
-                
+
+
                 //todo fix batching due to material change
                 var textObj  = new GameObject("ItemName");
                 var textRect = textObj.AddComponent<RectTransform>();
@@ -72,17 +72,15 @@ namespace Exile.Inventory {
                 textRect.pivot            = new Vector2(0, 1);
                 textRect.anchoredPosition = new Vector2(5, -5); // 5px padding from top-left
                 var text = textObj.AddComponent<TextMeshProUGUI>();
-                text.fontSize           = 14;
-                text.color              = Color.white;
-                text.alignment          = TextAlignmentOptions.TopLeft;
-                text.raycastTarget      = false;
+                text.fontSize         = 14;
+                text.color            = Color.white;
+                text.alignment        = TextAlignmentOptions.TopLeft;
+                text.raycastTarget    = false;
                 text.textWrappingMode = TextWrappingModes.PreserveWhitespace;
-                text.material = GameManager.Instance.GlobalConfig.FontTextMaterial;
-                text.outlineWidth = 0.3f;
-                text.overflowMode = TextOverflowModes.Ellipsis;
-                text.fontSize     = 15f;
-
-
+                //  text.material         = GameManager.Instance.GlobalConfig.FontTextMaterial;
+                //  text.outlineWidth     = 0.3f;
+                //  text.overflowMode     = TextOverflowModes.Ellipsis;
+                //  text.fontSize         = 15f;
 
 
                 // Create progress bar container at bottom
@@ -115,9 +113,8 @@ namespace Exile.Inventory {
                 var progressFill = progressFillObj.AddComponent<Image>();
                 progressFill.color         = new Color(0.34f, 0.68f, 0.34f, 0.9f); // Green fill
                 progressFill.raycastTarget = false;
-                
-                
-                
+
+
                 overlayObj.SetActive(false);
                 return overlayObj;
             });
@@ -127,7 +124,6 @@ namespace Exile.Inventory {
          * Setup
          */
         void Awake() {
-           
             rectTransform = GetComponent<RectTransform>();
 
 
@@ -145,7 +141,8 @@ namespace Exile.Inventory {
                 return image;
             });
 
-            InitializeOverlayPool();
+            if (_renderMode != InventoryRenderMode.Single)
+                InitializeOverlayPool();
         }
 
         private void Start() { }
@@ -245,7 +242,7 @@ namespace Exile.Inventory {
             var   containerSize = new Vector2(cellSize.x * inventory.width, cellSize.y * inventory.height);
             Image grid;
             switch (_renderMode) {
-                case InventoryRenderMode.Single: 
+                case InventoryRenderMode.Single:
                     grid = CreateImage(_cellSpriteEmpty, true);
                     grid.rectTransform.SetAsFirstSibling();
                     grid.type                        = Image.Type.Sliced;
@@ -389,65 +386,130 @@ namespace Exile.Inventory {
         }
 
         private void HandleItemAdded(IInventoryItem item) {
-            // SetSpritesShadows(item);
-
-
             var img = CreateImage(item.sprite, false);
-
-            // if (_renderMode == InventoryRenderMode.Single) {
-            //     img.rectTransform.localPosition = rectTransform.rect.center;
-            //     UpdateCellSprite(Vector2Int.zero, true);
-            // }
-            // else {
-            //     img.rectTransform.localPosition = GetItemOffset(item);
-            //
-            //
-            //     // Update all cells this item occupies
-            //     for (int x = 0; x < item.width; x++) {
-            //         for (int y = 0; y < item.height; y++) {
-            //             if (item.IsPartOfShape(new Vector2Int(x, y))) {
-            //                 var pos = item.position + new Vector2Int(x, y);
-            //                 UpdateCellSprite(pos, true);
-            //             }
-            //         }
-            //     }
-            // }
+            img.preserveAspect = true; // CRITICAL: Maintain sprite aspect ratio
 
             if (_renderMode == InventoryRenderMode.Single) {
+
+                if (item.Rotated) {
+                    Debug.Log($"Item is rotated !!");
+                    var w = item.width;
+                    var h = item.height;
+                    item.height = w;
+                    item.width = h;
+                    item.Rotated = false;
+                }
+                // Single mode: center the item and fit within the slot
                 img.rectTransform.localPosition = rectTransform.rect.center;
+                img.rectTransform.localRotation = Quaternion.identity;
+
+                // Set max size but preserve aspect ratio
+                float maxWidth  = cellSize.x * 0.9f; // 90% of cell width for padding
+                float maxHeight = cellSize.y * 0.9f; // 90% of cell height for padding
+
+                img.rectTransform.sizeDelta = new Vector2(maxWidth, maxHeight);
                 UpdateCellSprite(Vector2Int.zero, true);
             }
             else {
-                //hide all sprites that covered by this item
+                // Grid/Layered mode: position based on grid and handle rotation
+
+                // Hide all grid sprites covered by this item
                 for (int x = 0; x < item.width; x++) {
                     for (int y = 0; y < item.height; y++) {
                         if (item.IsPartOfShape(new Vector2Int(x, y))) {
                             var pos = item.position + new Vector2Int(x, y);
                             UpdateCellSprite(pos, true);
-                            //HideGridSprite(new Vector2Int(x, y));
                         }
                     }
                 }
 
+                // Position the item
                 img.rectTransform.localPosition = GetItemOffset(item);
-                // img.rectTransform.sizeDelta = new Vector2(item.width * cellSize.x, item.height * cellSize.y);
 
+                // Calculate the available space for the item
+                float availableWidth  = item.width * cellSize.x * 0.85f; // 85% for some padding
+                float availableHeight = item.height * cellSize.y * 0.85f;
 
+                // Handle rotation and sizing
                 if (item.Rotated) {
                     img.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
-                    img.rectTransform.sizeDelta     = new Vector2(item.height * cellSize.y / 1.3f, item.width * cellSize.x / 1.3f);
+                    // When rotated, swap the dimensions
+                    img.rectTransform.sizeDelta = new Vector2(availableHeight, availableWidth);
                 }
                 else {
                     img.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
-                    img.rectTransform.sizeDelta     = new Vector2(item.width * cellSize.x / 1.3f, item.height * cellSize.y / 1.3f);
+                    img.rectTransform.sizeDelta     = new Vector2(availableWidth, availableHeight);
                 }
-
-
-                
             }
 
-            SetItemInfoOverlay(item);
+            if (item.useDurability)
+                SetItemInfoOverlay(item, true);
             _items.Add(item, img);
+
+            // GameObject overlayObj;
+            //
+            // if (ItemInfoOverlays.ContainsKey(item)) {
+            //     // Update existing overlay
+            //     overlayObj = ItemInfoOverlays[item];
+            //     overlayObj.SetActive(true);
+            // }
+            // else {
+            //     // Create new overlay
+            //     overlayObj = _overlayPool.Take();
+            //     overlayObj.SetActive(true);
+            //     ItemInfoOverlays.Add(item, overlayObj);
+            // }
+            //
+            // // Get components from the overlay object
+            // var overlayRectTransform = overlayObj.GetComponent<RectTransform>();
+            // var itemNameText         = overlayObj.GetComponentInChildren<TextMeshProUGUI>();
+            // var progressBarContainer = overlayObj.transform.Find("ProgressBar");
+            // var progressBarBgRect    = progressBarContainer.GetComponent<RectTransform>();
+            // var progressBarFillRect = progressBarContainer.Find("ProgressFill")
+            //                                               .GetComponent<RectTransform>();
+            // var progressBarFillImage = progressBarFillRect.GetComponent<Image>();
+            //
+            // // Position and size the overlay to match the item's occupied cells
+            // overlayRectTransform.localPosition = GetItemOffset(item);
+            // overlayRectTransform.sizeDelta     = new Vector2(item.width * cellSize.x, item.height * cellSize.y);
+            //
+            // // Update text
+            // itemNameText.text = item.ItemName;
+            //
+            // // Calculate progress for the progress bar
+            // float progress = 0.8f;
+            // // if (item.Stackable && item.maxQuantity > 0) {
+            // //     progress = (float)item.Quantity / item.maxQuantity;
+            // // }
+            // // else {
+            // //     // If not stackable or maxQuantity is 0, hide the progress bar
+            // //     progressBarContainer.gameObject.SetActive(false);
+            // //     overlayRectTransform.SetAsLastSibling();
+            // //     return;
+            // // }
+            //
+            // // Ensure progress bar is active
+            // progressBarContainer.gameObject.SetActive(true);
+            //
+            // // FIXED: Get the actual width of the progress bar background (after padding is applied)
+            // // The progress bar has sizeDelta of (-20, 3) which means it's 20px less than parent width
+            // float actualProgressBarWidth = overlayRectTransform.sizeDelta.x - 20f; // 20px total padding (10px each side)
+            //
+            // // Set progress bar fill width based on actual available width
+            // progressBarFillRect.sizeDelta = new Vector2(actualProgressBarWidth * progress, 0);
+            //
+            // // Change progress bar fill color based on progress
+            // if (progress > 0.66f) {
+            //     progressBarFillImage.color = new Color(0.74f, 1f, 0.69f, 0.9f); // Green
+            // }
+            // else if (progress > 0.33f) {
+            //     progressBarFillImage.color = new Color(0.99f, 1f, 0.63f, 0.9f); // Yellow
+            // }
+            // else {
+            //     progressBarFillImage.color = new Color(1, 0, 0, 0.9f); // Red
+            // }
+            //
+            // overlayRectTransform.SetAsLastSibling();
         }
 
         private void HideGridSprite(Vector2Int cellPos) {
@@ -585,15 +647,21 @@ namespace Exile.Inventory {
         /// <param name="item">Item to select</param>
         /// <param name="blocked">Should the selection be rendered as blocked</param>
         /// <param name="color">The color of the selection</param>
-        public void SelectItem(IInventoryItem item, bool blocked, Color color) {
+        /// <param name="_image"></param>
+        public void SelectItem(IInventoryItem item, bool blocked, Color color, ref Image _image) {
             if (item == null) {
                 return;
             }
 
             ClearSelection();
+            if (_image != null) {
+                _image.rectTransform.sizeDelta = new Vector2(item.width * cellSize.x / 1.5f, item.height * cellSize.y / 1.5f);
+            }
 
             switch (_renderMode) {
                 case InventoryRenderMode.Single:
+
+
                     _grids[0].sprite = blocked
                                            ? _cellSpriteBlocked
                                            : _cellSpriteSelected;
@@ -653,12 +721,12 @@ namespace Exile.Inventory {
             return new Vector2(x, y + yoffset);
         }
 
-        private void SetItemInfoOverlay(IInventoryItem item) {
+        private void SetItemInfoOverlay(IInventoryItem item, bool showDurability, bool showitemname = false) {
             GameObject overlayObj;
 
-            if (ItemInfoOverlays.ContainsKey(item)) {
+            if (ItemInfoOverlays.TryGetValue(item, out var overlay)) {
                 // Update existing overlay
-                overlayObj = ItemInfoOverlays[item];
+                overlayObj = overlay;
                 overlayObj.SetActive(true);
             }
             else {
@@ -670,20 +738,28 @@ namespace Exile.Inventory {
 
             // Get components from the overlay object
             var overlayRectTransform = overlayObj.GetComponent<RectTransform>();
-            var itemNameText = overlayObj.GetComponentInChildren<TextMeshProUGUI>();
+            var itemNameText         = overlayObj.GetComponentInChildren<TextMeshProUGUI>();
             var progressBarContainer = overlayObj.transform.Find("ProgressBar");
-            var progressBarFillRect = progressBarContainer.Find("ProgressFill").GetComponent<RectTransform>();
+            var progressBarFillRect = progressBarContainer.Find("ProgressFill")
+                                                          .GetComponent<RectTransform>();
             var progressBarFillImage = progressBarFillRect.GetComponent<Image>();
 
-            // Position and size the overlay to match the item's occupied cells
-            overlayRectTransform.localPosition = GetItemOffset(item);
-            overlayRectTransform.sizeDelta = new Vector2(item.width * cellSize.x, item.height * cellSize.y);
+
+            if (_renderMode == InventoryRenderMode.Single) {
+                overlayRectTransform.localPosition = rectTransform.rect.center;
+                overlayRectTransform.sizeDelta     = cellSize;
+            }
+            else {
+                // Position and size the overlay to match the item's occupied cells
+                overlayRectTransform.localPosition = GetItemOffset(item);
+                overlayRectTransform.sizeDelta     = new Vector2(item.width * cellSize.x, item.height * cellSize.y);
+            }
 
             // Update text
             itemNameText.text = item.ItemName;
 
             // Calculate progress for the progress bar
-            float progress = 0.8f;
+            float progress = Mathf.Clamp(item.Durability, 0f, 1f);
             // if (item.Stackable && item.maxQuantity > 0) {
             //     progress = (float)item.Quantity / item.maxQuantity;
             // }
@@ -694,15 +770,16 @@ namespace Exile.Inventory {
             //     overlayRectTransform.SetAsLastSibling();
             //     return;
             // }
-            
-            // Ensure progress bar is active if it's stackable
+
+
             progressBarContainer.gameObject.SetActive(true);
 
             // Set progress bar fill width
             var progressBarRect = progressBarContainer.GetComponent<RectTransform>();
-            //float fullWidth = progressBarRect.sizeDelta.x;
-            float fullWidth = overlayRectTransform.sizeDelta.x;
-            Debug.Log(fullWidth);
+            // float fullWidth       = overlayRectTransform.sizeDelta.x;
+            float fullWidth = progressBarRect.sizeDelta.x;
+
+
             progressBarFillRect.sizeDelta = new Vector2(fullWidth * progress, 0);
 
             // Change progress bar fill color based on progress
@@ -715,7 +792,7 @@ namespace Exile.Inventory {
             else {
                 progressBarFillImage.color = new Color(1, 0, 0, 0.9f); // Red
             }
-            
+
             // // Optional: Color the background based on item tier
             // switch (item.ItemTier) {
             //     case ItemTier.Legendary:
@@ -745,8 +822,7 @@ namespace Exile.Inventory {
             }
         }
 
-
-        private void ClearAllItemInfoOverlays() {
+        public void ClearAllItemInfoOverlays() {
             foreach (var overlay in ItemInfoOverlays.Values) {
                 overlay.SetActive(false);
                 _overlayPool.Recycle(overlay);

@@ -59,6 +59,11 @@ namespace Exile.Inventory
 
         bool Rotated { get; set; }
         
+        
+        bool useDurability { get; }
+        
+        float Durability { get; set; }
+        float MaxDurability { get;  }
     }
 
     internal static class InventoryItemExtensions

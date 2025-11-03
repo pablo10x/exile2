@@ -82,36 +82,41 @@ namespace Exile.Inventory
             /*
              * Dragging started (IBeginDragHandler)
              */
-            public void OnBeginDrag(PointerEventData eventData)
-            {
+            public void OnBeginDrag(PointerEventData eventData) {
+                // Clear any existing selection in the inventory renderer
                 inventoryRenderer.ClearSelection();
 
+                // If there's no item to drag or an item is already being dragged, do nothing
                 if (_itemToDrag == null || _draggedItem != null) return;
-                
+
+                // Calculate the local position within the renderer and the offset for dragging
                 var localPosition = ScreenToLocalPositionInRenderer(eventData.position);
-                var itemOffest = inventoryRenderer.GetItemOffset(_itemToDrag);
-                var offset = itemOffest - localPosition;
+                var itemOffest    = inventoryRenderer.GetItemOffset(_itemToDrag);
+                var dragOffset = itemOffest - localPosition;
 
-                // Create a dragged item 
-                _draggedItem = new InventoryDraggedItem(
-                    _canvas,
-                    this,
-                    _itemToDrag.position,
-                    _itemToDrag,
-                    offset
-                );
+                // Create a new InventoryDraggedItem instance
+                _draggedItem = new InventoryDraggedItem(_canvas, this, _itemToDrag.position, _itemToDrag, dragOffset);
 
+                // Ensure the dragged item's image maintains its aspect ratio
+                _draggedItem._image.preserveAspect = true;
+
+                // Calculate the dimensions for the dragged item based on its size and cell size
+                float itemWidth = _itemToDrag.width * inventoryRenderer.cellSize.x / 1.8f;
+               
+                float itemHeight = _itemToDrag.height * inventoryRenderer.cellSize.y;
+
+                // Apply rotation and adjust size based on the item's rotated state
                 if (_draggedItem.item.Rotated) {
                     _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
-                    
+                    // When rotated, swap the dimensions
+                    _draggedItem._image.rectTransform.sizeDelta = new Vector2(itemHeight, itemWidth);
                 }
                 else {
                     _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
+                    _draggedItem._image.rectTransform.sizeDelta = new Vector2(itemWidth, itemHeight);
                 }
 
-                _draggedItem._image.rectTransform.sizeDelta = new Vector2(_draggedItem._image.rectTransform.sizeDelta.x /1.3f, _draggedItem._image.rectTransform.sizeDelta.y /1.3f);
-               
-                // Remove the item from inventory
+                // Attempt to remove the item from the inventory
                 inventory.TryRemove(_itemToDrag);
 
                 onItemPickedUp?.Invoke(_itemToDrag);
@@ -295,4 +300,3 @@ namespace Exile.Inventory
     
     
 }
-
