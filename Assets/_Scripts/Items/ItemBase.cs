@@ -12,6 +12,7 @@ namespace Exile.Inventory {
     public class ItemBase : ScriptableObject, IInventoryItem {
         [PreviewField(150, ObjectFieldAlignment.Center)] [SerializeField] private Sprite         _sprite = null;
         [SerializeField]                                                  private InventoryShape _shape  = null;
+        [SerializeField]                                                  private string         _name;
         [SerializeField]                                                  private ItemType       _type   = ItemType.Any;
         [SerializeField]                                                  private ItemTier       _tier   = ItemTier.Common;
         //stacking
@@ -27,11 +28,6 @@ namespace Exile.Inventory {
         [SerializeField, HideInInspector] private Vector2Int _position = Vector2Int.zero;
 
         /// <summary>
-        /// The name of the item
-        /// </summary>
-        public string Name;
-
-        /// <summary>
         /// The unique Id of the item
         /// </summary>
         [ReadOnly]
@@ -43,10 +39,16 @@ namespace Exile.Inventory {
         /// </summary>
         public ItemType Type => _type;
 
-        public string ItemName => Name;
+        public string ItemName {
+            get => _name;
+            set => _name = value;
+        }
 
         /// <inheritdoc />
-        public Sprite sprite => _sprite;
+        public Sprite sprite {
+            get => _sprite;
+            set => _sprite = value;
+        }
 
         /// <inheritdoc />
         public int width {
@@ -54,10 +56,26 @@ namespace Exile.Inventory {
             set => _shape.width = value;
         }
 
-        public ItemTier ItemTier    => _tier;
-        public int      maxQuantity => _maxQuantity;
-        public int      Quantity    => _quantity;
-        public bool     Stackable   => _Stackable;
+        public InventoryShape Shape {
+            get => _shape;
+            set => _shape = value;
+        }
+        public ItemTier ItemTier {
+            get => _tier;
+            set => _tier = value;
+        }
+        public int maxQuantity {
+            get => _maxQuantity;
+            set => _maxQuantity = value;
+        }
+        public int Quantity {
+            get => _quantity;
+            set => _quantity = value;
+        }
+        public bool Stackable {
+            get => _Stackable;
+            set => _Stackable = value;
+        }
 
         private InventoryProvider _provider = new InventoryProvider(InventoryRenderMode.Layered, -1, ItemType.Any);
 
@@ -94,7 +112,10 @@ namespace Exile.Inventory {
         }
 
         /// <inheritdoc />
-        public bool canDrop => _canDrop;
+        public bool canDrop {
+            get => _canDrop;
+            set => _canDrop = value;
+        }
 
         public bool Rotated { get; set; }
 

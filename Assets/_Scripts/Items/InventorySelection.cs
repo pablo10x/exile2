@@ -25,7 +25,7 @@ namespace Exile.Inventory.Examples
         {
             if (item != null)
             {
-                _text.text = (item as ItemBase).Name;
+                _text.text = (item as ItemBase).name;
             }
             else
             {

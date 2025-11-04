@@ -73,10 +73,19 @@ namespace Exile.Inventory
              */
             public void OnPointerDown(PointerEventData eventData)
             {
-                if (_draggedItem != null) return;
-                // Get which item to drag (item will be null of none were found)
                 var grid = ScreenToGrid(eventData.position);
-                _itemToDrag = inventory.GetAtPoint(grid);
+                var itemAtPoint = inventory.GetAtPoint(grid);
+
+                if (_draggedItem != null) return;
+
+                if (itemAtPoint != null) {
+                    // Check for split action (e.g., holding 'X' key)
+                    if (Input.GetKey(KeyCode.X)) {
+                        HandleSplitStack(itemAtPoint);
+                    } else {
+                        _itemToDrag = itemAtPoint;
+                    }
+                }
             }
 
             /*
@@ -140,8 +149,19 @@ namespace Exile.Inventory
              */
             public void OnEndDrag(PointerEventData eventData)
             {
-                if (_draggedItem == null) return;
-                
+                if (_draggedItem == null) {
+                    return;
+                }
+
+                bool wasHandled = HandleSwapOnDrop(eventData);
+
+                // If the swap logic handled the drop, we are done.
+                if (wasHandled) {
+                    _draggedItem = null;
+                    _itemToDrag = null;
+                    return;
+                }
+
                 var mode = _draggedItem.Drop(eventData.position);
 
                 switch (mode)
@@ -162,7 +182,103 @@ namespace Exile.Inventory
                 }
 
                 _draggedItem = null;
+                _itemToDrag = null;
                 _currentEventData = null;
+            }
+
+            /// <summary>
+            /// Checks if an item is being dropped onto another item and attempts to swap them.
+            /// </summary>
+            /// <returns>True if the drop was handled (either by swapping or stacking), false otherwise.</returns>
+            private bool HandleSwapOnDrop(PointerEventData eventData) {
+                var draggedItem = _draggedItem.item;
+
+                // Find the inventory controller under the cursor
+                var raycastResults = new System.Collections.Generic.List<RaycastResult>();
+                EventSystem.current.RaycastAll(eventData, raycastResults);
+                var targetController = raycastResults.Count > 0 ? raycastResults[0].gameObject.GetComponent<InventoryController>() : null;
+
+                if (targetController == null) return false;
+
+                // Find the item at the drop position
+                var gridPoint  = targetController.ScreenToGrid(eventData.position);
+                var targetItem = targetController.inventory.GetAtPoint(gridPoint);
+
+                if (targetItem == null) return false; // Not dropping on an item
+
+                // --- Stacking Logic ---
+                // If items are the same and stackable, try to stack them first.
+                if (targetItem != draggedItem && targetItem.Stackable && targetItem.ItemName == draggedItem.ItemName) {
+                    int spaceInStack     = targetItem.maxQuantity - targetItem.Quantity;
+                    int amountToTransfer = Mathf.Min(spaceInStack, draggedItem.Quantity);
+
+                    if (amountToTransfer > 0) {
+                        targetItem.Quantity += amountToTransfer;
+                        draggedItem.Quantity -= amountToTransfer;
+                        targetController.inventoryRenderer.RefreshItem(targetItem);
+
+                        if (draggedItem.Quantity <= 0) {
+                            Destroy(_draggedItem._image.gameObject);
+                            return true; // Fully stacked, operation is complete.
+                        }
+                        // If there's a remainder, fall through to the normal drop logic.
+                        return false;
+                    }
+                }
+
+                // --- Swapping Logic ---
+                // If not stacking, attempt to swap.
+                var originalController = _draggedItem.originalController.inventory;
+                var originalPosition = _draggedItem.originPoint;
+
+                // Check if the target item can fit in the dragged item's original spot
+                if (targetController.inventory.TryRemove(targetItem) && originalController.CanAddAt(targetItem, originalPosition)) {
+                    // Perform the swap
+                    originalController.TryAddAt(targetItem, originalPosition);
+                    targetController.inventory.TryAddAt(draggedItem, targetItem.position);
+                    Destroy(_draggedItem._image.gameObject);
+                    return true; // Swap was successful.
+                }
+
+                return false; // Could not stack or swap.
+            }
+
+            /// <summary>
+            /// Handles splitting a stack of items when the split key is held.
+            /// </summary>
+            private void HandleSplitStack(IInventoryItem itemToSplit) {
+                // Can only split stackable items with more than one in the stack
+                if (!itemToSplit.Stackable || itemToSplit.Quantity <= 1) return;
+
+                int originalQuantity = itemToSplit.Quantity;
+                int newStackQuantity = Mathf.FloorToInt(originalQuantity / 2f);
+                int remainingQuantity = originalQuantity - newStackQuantity;
+
+                if (newStackQuantity > 0) {
+                    // Create a new item instance for the split stack
+                    var newItem = itemToSplit.CreateInstance();
+                    newItem.Quantity = newStackQuantity;
+
+                    // Find the next empty point that can fit the new item, bypassing the auto-stacking logic.
+                    Vector2Int emptyPoint;
+                    if (inventory.GetFirstPointThatFitsItem(newItem, out emptyPoint))
+                    {
+                        // Add the new item directly to the found empty slot.
+                        inventory.TryAddAt(newItem, emptyPoint);
+
+                        // If successful, update the original item's quantity.
+                        itemToSplit.Quantity = remainingQuantity;
+
+                        // Manually trigger a re-render of the original item's UI to update its quantity text.
+                        // This is necessary because just changing the quantity doesn't fire an inventory event.
+                        inventoryRenderer.RefreshItem(itemToSplit);
+                    }
+                    else {
+                        // If adding failed (e.g., inventory is full), destroy the temporary item instance.
+                        Destroy(newItem as UnityEngine.Object);
+                        Debug.Log("Could not split stack: Not enough space in inventory.");
+                    }
+                }
             }
 
             /*

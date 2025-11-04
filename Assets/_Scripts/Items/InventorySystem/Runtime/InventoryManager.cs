@@ -118,6 +118,9 @@ public class InventoryManager : IInventoryManager {
     public Action<IInventoryItem> onItemAdded { get; set; }
 
     /// <inheritdoc />
+    public Action<IInventoryItem> onItemChanged { get; set; }
+
+    /// <inheritdoc />
     public Action<IInventoryItem> onItemAddedFailed { get; set; }
 
     /// <inheritdoc />
@@ -289,12 +292,56 @@ public class InventoryManager : IInventoryManager {
     /// <inheritdoc />
     public bool TryAdd(IInventoryItem item) {
         if (!CanAdd(item)) {
-          //  Debug.LogWarning("Couldn't add because function [canadd] returned false");
+            //  Debug.LogWarning("Couldn't add because function [canadd] returned false");
             return false;
         }
 
+        // Attempt to stack the item first
+        if (TryStack(item)) {
+            // If the item was fully stacked, we are done.
+            if (item.Quantity <= 0) {
+                return true;
+            }
+        }
+        
+        // If there's remaining quantity or it couldn't be stacked, find a new slot.
         Vector2Int point;
         return GetFirstPointThatFitsItem(item, out point) && TryAddAt(item, point);
+    }
+
+    /// <summary>
+    /// Attempts to stack an item with existing items in the inventory.
+    /// </summary>
+    /// <param name="itemToAdd">The item to stack. Its quantity will be reduced if stacked.</param>
+    /// <returns>True if any part of the item was stacked.</returns>
+    private bool TryStack(IInventoryItem itemToAdd) {
+        if (!itemToAdd.Stackable) {
+            return false;
+        }
+
+        bool stacked = false;
+        foreach (var existingItem in allItems) {
+            // Check if items are the same and the existing stack is not full
+            if (existingItem.ItemName == itemToAdd.ItemName && existingItem.Quantity < existingItem.maxQuantity) {
+                int spaceInStack = existingItem.maxQuantity - existingItem.Quantity;
+                int amountToTransfer = Mathf.Min(spaceInStack, itemToAdd.Quantity);
+
+                if (amountToTransfer > 0) {
+                    existingItem.Quantity += amountToTransfer;
+                    itemToAdd.Quantity -= amountToTransfer;
+
+                    // Notify listeners that the existing item has been updated
+                    onItemChanged?.Invoke(existingItem);
+                    stacked = true;
+
+                    // If the item to add is now empty, we can stop
+                    if (itemToAdd.Quantity <= 0) {
+                        break;
+                    }
+                }
+            }
+        }
+        return stacked;
     }
     /// <summary>
 /// Attempts to add an item to the inventory, trying both normal and rotated orientations.
@@ -318,6 +365,14 @@ public bool TryAddWithRotation(IInventoryItem item) {
     int originalWidth = item.width;
     int originalHeight = item.height;
     bool originalRotated = item.Rotated;
+
+    // Attempt to stack the item first, regardless of rotation
+    if (TryStack(item)) {
+        // If the item was fully stacked, we are done.
+        if (item.Quantity <= 0) {
+            return true;
+        }
+    }
 
     try {
         // First, try adding in normal orientation

@@ -9,7 +9,13 @@ namespace Exile.Inventory
         /// Invoked when an item is added to the inventory
         /// </summary>
         Action<IInventoryItem> onItemAdded { get; set; }
-        
+
+
+        /// <summary>
+        /// Called when an item's properties (like quantity or durability) have changed
+        /// </summary>
+        Action<IInventoryItem> onItemChanged { get; set; }
+
         /// <summary>
         /// Invoked when an item was not able to be added to the inventory
         /// </summary>

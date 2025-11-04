@@ -37,7 +37,7 @@ namespace Exile.Inventory
 
         bool Stackable { get; }
         int maxQuantity { get; }
-        int Quantity { get; }
+        int Quantity { get; set; }
         
         
         /// <summary>
@@ -64,6 +64,11 @@ namespace Exile.Inventory
         
         float Durability { get; set; }
         float MaxDurability { get;  }
+
+        /// <summary>
+        /// Creates a copy of this item
+        /// </summary>
+        IInventoryItem CreateInstance();
     }
 
     internal static class InventoryItemExtensions

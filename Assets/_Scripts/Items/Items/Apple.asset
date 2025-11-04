@@ -17,17 +17,17 @@ MonoBehaviour:
     _width: 1
     _height: 1
     _shape: 01
+  _name: Apple
   _type: 4
   _tier: 0
   _Stackable: 1
-  _maxQuantity: 5
+  _maxQuantity: 6
   _quantity: 1
   _useDurability: 0
   _Durability: 0
   Max_Durability: 0
   _canDrop: 1
   _position: {x: 0, y: 0}
-  Name: Apple
   _iscontainer: 0
   container_shape:
     _width: 1

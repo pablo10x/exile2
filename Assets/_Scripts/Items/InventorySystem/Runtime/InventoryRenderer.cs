@@ -82,6 +82,21 @@ namespace Exile.Inventory {
                 //  text.overflowMode     = TextOverflowModes.Ellipsis;
                 //  text.fontSize         = 15f;
 
+                // Create text for item quantity
+                var quantityTextObj  = new GameObject("ItemQuantity");
+                var quantityTextRect = quantityTextObj.AddComponent<RectTransform>();
+                quantityTextRect.SetParent(rectTransform);
+                quantityTextRect.localScale       = Vector3.one;
+                quantityTextRect.anchorMin        = new Vector2(1, 0); // Bottom-right anchor
+                quantityTextRect.anchorMax        = new Vector2(1, 0);
+                quantityTextRect.pivot            = new Vector2(1, 0);
+                quantityTextRect.anchoredPosition = new Vector2(-5, 5); // 5px padding from bottom-right
+                var quantityText = quantityTextObj.AddComponent<TextMeshProUGUI>();
+                quantityText.fontSize      = 18;
+                quantityText.fontStyle     = FontStyles.Bold;
+                quantityText.color         = Color.white;
+                quantityText.alignment     = TextAlignmentOptions.BottomRight;
+                quantityText.raycastTarget = false;
 
                 // Create progress bar container at bottom
                 var progressBarObj  = new GameObject("ProgressBar");
@@ -188,6 +203,7 @@ namespace Exile.Inventory {
 
                 inventory.onRebuilt     += ReRenderAllItems;
                 inventory.onItemAdded   += HandleItemAdded;
+                inventory.onItemChanged += OnItemChanged;
                 inventory.onItemRemoved += HandleItemRemoved;
                 inventory.onItemDropped += HandleItemRemoved;
                 inventory.onResized     += HandleResized;
@@ -199,6 +215,8 @@ namespace Exile.Inventory {
             }
         }
 
+      
+
         /*
         Invoked when the inventory inventoryRenderer is disabled
         */
@@ -206,6 +224,7 @@ namespace Exile.Inventory {
             if (inventory != null && _haveListeners) {
                 inventory.onRebuilt     -= ReRenderAllItems;
                 inventory.onItemAdded   -= HandleItemAdded;
+                inventory.onItemChanged -= OnItemChanged;
                 inventory.onItemRemoved -= HandleItemRemoved;
                 inventory.onItemDropped -= HandleItemRemoved;
                 inventory.onResized     -= HandleResized;
@@ -213,6 +232,9 @@ namespace Exile.Inventory {
             }
         }
 
+        private void OnItemChanged(IInventoryItem item) {
+            RefreshItem(item);
+        }
         /*
         Clears and renders the grid. This must be done whenever the size of the inventory changes
         */
@@ -390,15 +412,15 @@ namespace Exile.Inventory {
             img.preserveAspect = true; // CRITICAL: Maintain sprite aspect ratio
 
             if (_renderMode == InventoryRenderMode.Single) {
-
                 if (item.Rotated) {
                     Debug.Log($"Item is rotated !!");
                     var w = item.width;
                     var h = item.height;
-                    item.height = w;
-                    item.width = h;
+                    item.height  = w;
+                    item.width   = h;
                     item.Rotated = false;
                 }
+
                 // Single mode: center the item and fit within the slot
                 img.rectTransform.localPosition = rectTransform.rect.center;
                 img.rectTransform.localRotation = Quaternion.identity;
@@ -442,8 +464,8 @@ namespace Exile.Inventory {
                 }
             }
 
-            if (item.useDurability)
-                SetItemInfoOverlay(item, true);
+
+            SetItemInfoOverlay(item, true);
             _items.Add(item, img);
 
             // GameObject overlayObj;
@@ -510,6 +532,16 @@ namespace Exile.Inventory {
             // }
             //
             // overlayRectTransform.SetAsLastSibling();
+        }
+
+        /// <summary>
+        /// Forces a re-render of a single item's UI, useful for updating quantity or durability displays.
+        /// </summary>
+        public void RefreshItem(IInventoryItem item) {
+            if (_items.ContainsKey(item)) {
+                // This will find the existing overlay and update its values.
+                SetItemInfoOverlay(item, true);
+            }
         }
 
         private void HideGridSprite(Vector2Int cellPos) {
@@ -740,6 +772,9 @@ namespace Exile.Inventory {
             var overlayRectTransform = overlayObj.GetComponent<RectTransform>();
             var itemNameText         = overlayObj.GetComponentInChildren<TextMeshProUGUI>();
             var progressBarContainer = overlayObj.transform.Find("ProgressBar");
+            var quantityText = overlayObj.transform.Find("ItemQuantity")
+                                         ?.GetComponent<TextMeshProUGUI>();
+
             var progressBarFillRect = progressBarContainer.Find("ProgressFill")
                                                           .GetComponent<RectTransform>();
             var progressBarFillImage = progressBarFillRect.GetComponent<Image>();
@@ -757,6 +792,17 @@ namespace Exile.Inventory {
 
             // Update text
             itemNameText.text = item.ItemName;
+
+            // Update quantity text
+            if (quantityText != null) {
+                if (item.Stackable && item.Quantity > 1) {
+                    quantityText.gameObject.SetActive(true);
+                    quantityText.text = item.Quantity.ToString();
+                }
+                else {
+                    quantityText.gameObject.SetActive(false);
+                }
+            }
 
             // Calculate progress for the progress bar
             float progress = Mathf.Clamp(item.Durability, 0f, 1f);
