@@ -670,17 +670,24 @@ namespace Exile.Inventory {
         /// <summary>
         /// Selects a given item in the inventory
         /// </summary>
-        /// <param name="item">Item to select</param>
-        /// <param name="blocked">Should the selection be rendered as blocked</param>
-        /// <param name="color">The color of the selection</param>
+        /// <param name="item">
+        ///     Item to select
+        ///     Item to select
+        /// </param>
+        /// <param name="blocked">
+        ///     Should the selection be rendered as blocked
+        ///     Should the selection be rendered as blocked
+        /// </param>
+        /// <param name="canstack"></param>
+        /// <param name="color">
+        ///     The color of the selection
+        ///     The color of the selection
+        /// </param>
         /// <summary>
         /// Selects a given item in the inventory
         /// </summary>
-        /// <param name="item">Item to select</param>
-        /// <param name="blocked">Should the selection be rendered as blocked</param>
-        /// <param name="color">The color of the selection</param>
         /// <param name="_image"></param>
-        public void SelectItem(IInventoryItem item, bool blocked, Color color, ref Image _image) {
+        public void SelectItem(IInventoryItem item, bool blocked,bool canstack, Color color, ref Image _image) {
             if (item == null) {
                 return;
             }
@@ -707,9 +714,16 @@ namespace Exile.Inventory {
                                 if (p.x >= 0 && p.x < inventory.width && p.y >= 0 && p.y < inventory.height) {
                                     // FIXED: Use same index calculation as UpdateCellSprite and ReRenderGrid
                                     var index = p.y * inventory.width + p.x;
-                                    _grids[index].sprite = blocked
-                                                               ? _cellSpriteBlocked
-                                                               : _cellSpriteSelected;
+
+                                    if (blocked && !canstack) {
+                                        _grids[index].sprite = _cellSpriteBlocked;
+                                    }
+                                    else {
+                                        _grids[index].sprite = _cellSpriteSelected;
+                                    }
+                                    
+                                    
+                                    
                                     _grids[index].color = color;
                                 }
                             }

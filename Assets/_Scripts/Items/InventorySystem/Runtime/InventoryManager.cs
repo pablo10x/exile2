@@ -147,6 +147,52 @@ public class InventoryManager : IInventoryManager {
         return null;
     }
 
+    /// <summary>
+    /// Attempts to swap the positions of two items in the inventory.
+    /// </summary>
+    /// <param name="item1">The first item to swap.</param>
+    /// <param name="item2">The second item to swap.</param>
+    /// <returns>True if the swap was successful, false otherwise.</returns>
+    public bool SwapItems(IInventoryItem item1, IInventoryItem item2) {
+        // --- 1. Pre-checks ---
+        if (item1 == null || item2 == null || item1 == item2 || !Contains(item1) || !Contains(item2)) {
+            return false;
+        }
+
+        // --- 2. State Capture ---
+        var pos1 = item1.position;
+        var rotated1 = item1.Rotated;
+        var pos2 = item2.position;
+        var rotated2 = item2.Rotated;
+
+        // --- 3. Removal ---
+        // Remove both items to free up their space for validation checks.
+        if (!TryRemove(item1) || !TryRemove(item2)) {
+            // This case is highly unlikely but is a safeguard.
+            // Attempt to rebuild the inventory to its last known good state.
+            Rebuild(); 
+            return false;
+        }
+
+        // --- 4. Validation ---
+        // Check if each item can fit in the other's original spot.
+        bool canItem1MoveToPos2 = CanAddAt(item1, pos2);
+        bool canItem2MoveToPos1 = CanAddAt(item2, pos1);
+
+        // --- 5. Execution or Rollback ---
+        if (canItem1MoveToPos2 && canItem2MoveToPos1) {
+            // Swap is possible, execute it.
+            TryAddAt(item1, pos2);
+            TryAddAt(item2, pos1);
+            return true;
+        } else {
+            // Swap is not possible, return items to their original positions.
+            TryAddAt(item1, pos1);
+            TryAddAt(item2, pos2);
+            return false;
+        }
+    }
+
     /// <inheritdoc />
     public IInventoryItem[] GetAtPoint(Vector2Int point, Vector2Int size) {
         var posibleItems = new IInventoryItem[size.x * size.y];

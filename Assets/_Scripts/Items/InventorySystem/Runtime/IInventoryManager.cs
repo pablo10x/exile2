@@ -143,6 +143,9 @@ namespace Exile.Inventory
         /// Get an item at given point within this inventory
         /// </summary>
         IInventoryItem GetAtPoint(Vector2Int point);
+        
+        //swap item positions
+        bool SwapItems(IInventoryItem item, IInventoryItem item2);
 
         /// <summary>
         /// Returns all items under given rectangle
