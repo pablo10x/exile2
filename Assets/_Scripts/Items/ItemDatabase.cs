@@ -47,7 +47,7 @@ public class ItemDatabase : ScriptableObject
         // Assign IDs based on the list index
         for (int i = 0; i < _items.Count; i++)
         {
-            if (_items[i] != null)
+            if (_items[i] != null && _items[i].Id == -1)
             {
                 _items[i].Id = i;
                 EditorUtility.SetDirty(_items[i]);

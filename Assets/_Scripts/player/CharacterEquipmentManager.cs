@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Exile.Inventory;
 using Exile.Inventory.Examples;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
@@ -36,6 +37,11 @@ namespace core.player {
         
         private void Start() {
                 _clothingCuller.Register(body, false);
+        }
+
+
+        public void EquipBodyItem(ItemCloth item) {
+            _clothingCuller.Register(item.ItemPrefab);
         }
 
    

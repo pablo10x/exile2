@@ -1,4 +1,5 @@
 ﻿using System;
+using Exile.Inventory;
 using FishNet.Object;
 using UnityEngine;
 using Sirenix.OdinInspector;
@@ -24,6 +25,10 @@ public class PlayerInteraction : NetworkBehaviour
     [BoxGroup("Input Settings")]
     [Tooltip("Key to press for interaction")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
+
+    [BoxGroup("Input Settings")]
+    [Tooltip("Maximum distance in meters to interact with objects. This is validated on the server.")]
+    [SerializeField] private float maxInteractionDistance = 3f;
     
     [BoxGroup("Debug")]
     [Tooltip("Enable debug logging for interactions")]
@@ -167,7 +172,7 @@ public class PlayerInteraction : NetworkBehaviour
     {
         if (Input.GetKeyDown(interactKey) && CanInteract)
         {
-            TryInteract();
+            _currentInteractable.Interact(this);
         }
     }
     
@@ -175,36 +180,16 @@ public class PlayerInteraction : NetworkBehaviour
     
     #region Interaction Logic
     
-    /// <summary>
-    /// Attempts to interact with the currently available interactable object.
-    /// </summary>
-    public void TryInteract()
+    public void TryPickupItem(ItemPickup itemPickup)
     {
-        if (!CanInteract)
+        if (itemPickup == null) return;
+        
+        if (enableDebugLogs)
         {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning($"[{nameof(PlayerInteraction)}] No interactable available");
-            }
-            return;
+            Debug.Log($"[{nameof(PlayerInteraction)}] Attempting to pick up item: {itemPickup.item.name}", itemPickup.gameObject);
         }
         
-        // Handle different interactable types
-        if (_currentInteractable is MiningNode miningNode)
-        {
-            InteractWithMiningNode(miningNode);
-        }
-        // Add more interactable type checks here as needed
-        // else if (_currentInteractable is Door door) { ... }
-        // else if (_currentInteractable is Chest chest) { ... }
-        else
-        {
-            // Generic interaction fallback
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[{nameof(PlayerInteraction)}] Interacting with: {_currentInteractableObject.name}", _currentInteractableObject);
-            }
-        }
+        ServerPickupItem(itemPickup);
     }
     
     private void InteractWithMiningNode(MiningNode node)
@@ -234,6 +219,52 @@ public class PlayerInteraction : NetworkBehaviour
         // Server processes the mining request
         node.TryMine(base.NetworkObject);
     }
+
+    [ServerRpc]
+    private void ServerPickupItem(ItemPickup itemPickup)
+    {
+        if (itemPickup == null || itemPickup.gameObject == null)
+        {
+            Debug.LogWarning($"[{nameof(PlayerInteraction)}] Server received null or destroyed item pickup request from player {Owner.ClientId}.");
+            return;
+        }
+
+        // --- SECURITY CHECK ---
+        // Verify the player is close enough to the item to pick it up.
+        float distance = Vector3.Distance(transform.position, itemPickup.transform.position);
+        if (distance > maxInteractionDistance)
+        {
+            if (enableDebugLogs)
+            {
+                Debug.LogWarning($"[{nameof(PlayerInteraction)}] Player {Owner.ClientId} tried to pick up item '{itemPickup.item.name}' from too far away! Distance: {distance}");
+            }
+            return; // Reject the request
+        }
+
+        // InventoryView inventoryView = Owner.GetComponent<InventoryView>();
+        // if (inventoryView != null && inventoryView.InventoryManager != null)
+        // {
+        //     // Attempt to add the item to the player's inventory.
+        //     // We must create a new instance of the item to avoid issues with ScriptableObjects.
+        //     if (inventoryView.InventoryManager.TryAddWithRotation(itemPickup.item.CreateInstance()))
+        //     {
+        //         // If successful, despawn the item from the world.
+        //         ServerManager.Despawn(itemPickup.gameObject);
+        //     }
+        //     else
+        //     {
+        //         // Optional: Notify the client that their inventory is full.
+        //         if (enableDebugLogs)
+        //         {
+        //             Debug.Log($"[{nameof(PlayerInteraction)}] Player {Owner.ClientId} failed to pick up {itemPickup.item.name}, inventory may be full.");
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     Debug.LogError($"[{nameof(PlayerInteraction)}] InventoryView or InventoryManager not found on player {Owner.ClientId}!");
+        // }
+    }
     
     #endregion
     
@@ -258,14 +289,7 @@ public class PlayerInteraction : NetworkBehaviour
     {
         if (interactable == null) return "";
         
-        // Customize prompt based on interactable type
-        if (interactable is MiningNode)
-        {
-            return $"Press {interactKey} to mine";
-        }
-        
-        // Generic fallback
-        return $"Press {interactKey} to interact";
+        return interactable.GetInteractionPrompt();
     }
     
     #endregion

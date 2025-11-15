@@ -206,11 +206,20 @@ namespace core.Managers {
         #region Player Stats
 
         public void BindPlayerStatsEvents(PlayerStatus status) {
-            status.OnHealthChanged  += () => { PlayerHealth.SetValue(status.health); };
-            status.OnHungerChanged  += () => { PlayerHunger.SetValue(status.hunger); };
-            status.OnThirstChanged  += () => { PlayerThirst.SetValue(status.thirst); };
-            status.OntempChanged    += () => { PlayerTemp.SetValue(status.temp); };
-            status.OnStaminaChanged += () => { };
+
+            
+            status.OnHydrationChanged += f => {
+                PlayerThirst.SetValue(status.Hydration);
+            };
+
+            status.OnEnergyChanged += f => {
+                PlayerHunger.SetValue(status.Energy);
+            };
+            // status.OnHealthChanged  += () => { PlayerHealth.SetValue(status.Health); };
+            // status.OnHungerChanged  += () => { PlayerHunger.SetValue(status.hunger); };
+            // status.OnThirstChanged  += () => { PlayerThirst.SetValue(status.thirst); };
+            // status.OntempChanged    += () => { PlayerTemp.SetValue(status.temp); };
+            //status.OnStaminaChanged += () => { };
         }
 
         #endregion

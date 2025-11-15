@@ -41,10 +41,22 @@ namespace Exile.Inventory {
         [BoxGroup("Debug")] [FoldoutGroup("Debug/Test")] public bool           test_AutoCreate = true;
         [FoldoutGroup("Debug/Test")]                     public List<ItemBase> items           = new List<ItemBase>();
 
+        internal bool isActive = false;
+
         private void Start() {
-            if (test_AutoCreate) {
+            if(test_AutoCreate)
                 createtab();
+            
+        }
+
+        public InventoryManager CreateInventoryView(ref ItemBase item) {
+            if (item._iscontainer) {
+                h = item.container_shape.height;
+                w = item.container_shape.width;
+                return CreateInventoryView(item, _renderMode, AllowedItemType = ItemType.Any);
             }
+
+            return null;
         }
 
         public InventoryManager CreateInventoryView(IInventoryItem item, InventoryRenderMode _render, ItemType _alloweditems = ItemType.Any) {
@@ -121,13 +133,9 @@ namespace Exile.Inventory {
             return InventoryManager;
         }
 
-        private void OnItemAdded(IInventoryItem item) {
-           
-        }
+        private void OnItemAdded(IInventoryItem item) { }
 
-        private void OnItemRemoved(IInventoryItem item) {
-           
-        }
+        private void OnItemRemoved(IInventoryItem item) { }
 
         public void AddItem(ItemBase _item) {
             var it = _item.CreateInstance();
@@ -144,15 +152,17 @@ namespace Exile.Inventory {
 
         [Button("Clear")]
         private void Clear() {
-            if (_renderMode == InventoryRenderMode.Single) {
-                InventoryManager.Resize(1, 1);
-            }
-            else {
-                InventoryManager.Resize(w, h);
-            }
+            if (InventoryManager != null) {
+                if (_renderMode == InventoryRenderMode.Single) {
+                    InventoryManager.Resize(1, 1);
+                }
+                else {
+                    InventoryManager.Resize(w, h);
+                }
 
-            _iv_render.ClearAllItemInfoOverlays();
-            InventoryManager.Rebuild();
+                _iv_render.ClearAllItemInfoOverlays();
+                InventoryManager.Rebuild();
+            }
         }
 
         [Button("Add random item")]
@@ -160,6 +170,38 @@ namespace Exile.Inventory {
             foreach (var it in items) {
                 AddItem(it);
             }
+        }
+
+        public void ResetView() {
+            if (InventoryManager != null) {
+                InventoryManager.onItemAdded   -= OnItemAdded;
+                InventoryManager.onItemRemoved -= OnItemRemoved;
+                InventoryManager.Clear();   // Clear all items from the inventory
+                InventoryManager.Dispose(); // Dispose of the inventory manager resources
+                InventoryManager = null;
+            }
+
+            if (_iv_render != null) {
+                _iv_render.ClearAllItemInfoOverlays();
+                _iv_render.SetInventory(null, InventoryRenderMode.Grid); // Clear the renderer
+            }
+
+            // Reset UI elements
+            if (inventoryViewTMp_Name != null) inventoryViewTMp_Name.text = "";
+            if (itemImage != null) {
+                itemImage.enabled = false;
+                itemImage.sprite  = null;
+            }
+
+            // Reset to default dimensions or a known initial state
+            w                   = 5;                        // Default width
+            h                   = 4;                        // Default height
+            _renderMode         = InventoryRenderMode.Grid; // Default render mode
+            _allow_adding_items = true;
+            AllowedItemType     = ItemType.Any;
+
+            // Deactivate the GameObject itself, handled by the pool manager
+            gameObject.SetActive(false);
         }
     }
 }

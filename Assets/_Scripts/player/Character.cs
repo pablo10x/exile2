@@ -370,7 +370,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
                      * The stamina check below would likely prevent such a scenario.
                      *
                      * We're going to unset jump for this reason. */
-                    rd.Jump = false;
+                    //rd.Jump = false;
 
                     /* Be aware that future predicting is not a one-size fits all
                      * feature. How much you predict into the future, if at all, depends
@@ -1124,6 +1124,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     public override void OnStartClient() {
         SetupPlayerCharacter();
+        GameManager.Instance.PlayerSpawnedEventDispatcher();
     }
 
     public override void OnStopClient() {

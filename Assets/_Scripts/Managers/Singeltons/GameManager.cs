@@ -60,6 +60,7 @@ namespace core.Managers {
         }
 
   
+        public void PlayerSpawnedEventDispatcher() => OnPlayerSpawned?.Invoke();
 
         
 
