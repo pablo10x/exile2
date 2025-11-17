@@ -4,6 +4,7 @@ using System.Linq;
 using Exile.Inventory;
 
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 #endif
 
@@ -17,19 +18,17 @@ public class ItemDatabase : ScriptableObject
 
     public ItemBase GetItem(int id)
     {
-        if (id >= 0 && id < _items.Count)
-        {
-            return _items[id];
-        }
-        return null;
+        // Use LINQ to find the item with the matching ID.
+        return _items.FirstOrDefault(item => item.Id == id);
     }
 
     public ItemBase GetItem(string name)
     {
-        return _items.FirstOrDefault(item => item.name == name);
+        return _items.FirstOrDefault(item => item.ItemName == name);
     }
 
 #if UNITY_EDITOR
+
     public void UpdateDatabase()
     {
         _items.Clear();
@@ -43,14 +42,21 @@ public class ItemDatabase : ScriptableObject
                 _items.Add(item);
             }
         }
-        
-        // Assign IDs based on the list index
-        for (int i = 0; i < _items.Count; i++)
+
+        // Find the highest existing ID to continue incrementing from there.
+        int nextId = 1000;
+        if (_items.Any(item => item.Id >= 1000))
         {
-            if (_items[i] != null && _items[i].Id == -1)
+            nextId = _items.Max(item => item.Id) + 1;
+        }
+
+        // Assign a new, unique, incremental ID to any item that doesn't have one.
+        foreach (var item in _items)
+        {
+            if (item != null && item.Id <= 0) // Using <= 0 to catch -1 and default 0.
             {
-                _items[i].Id = i;
-                EditorUtility.SetDirty(_items[i]);
+                item.Id = nextId++;
+                EditorUtility.SetDirty(item);
             }
         }
         

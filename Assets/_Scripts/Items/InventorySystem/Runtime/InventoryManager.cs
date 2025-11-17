@@ -242,7 +242,7 @@ public class InventoryManager : IInventoryManager {
     public bool CanAddAt(IInventoryItem item, Vector2Int point) {
 
         if (!_provider.CanAddInventoryItem(item) || _provider.isInventoryFull || _AllowAddingitems == false) {
-            Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
+          //  Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
             return false;
         }
 
@@ -498,9 +498,9 @@ public bool TryAddWithRotation(IInventoryItem item) {
   */
     public bool GetFirstPointThatFitsItem(IInventoryItem item, out Vector2Int point) {
         if (DoesItemFit(item)) {
-           
-            for (var x = 0; x < width - (item.width - 1); x++) {
-                for (var y = 0; y < height - (item.height - 1); y++) {
+            // Search from top-to-bottom, then left-to-right
+            for (var y = height - 1; y >= 0; y--) {
+                for (var x = 0; x < width; x++) {
                     point = new Vector2Int(x, y);
              
                     if (CanAddAt(item, point)) return true;

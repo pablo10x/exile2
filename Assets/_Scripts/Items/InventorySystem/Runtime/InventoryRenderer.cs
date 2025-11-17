@@ -312,12 +312,11 @@ namespace Exile.Inventory {
                         for (int x = 0; x < inventory.width; x++) {
                             grid                 = CreateImage(_cellSpriteEmpty, true);
                             grid.gameObject.name = "grid " + c;
-                            grid.rectTransform.SetAsFirstSibling();
+                            grid.rectTransform.SetAsLastSibling();
                             grid.type = Image.Type.Simple;
 
                             // FIXED: No coordinate flip
                             grid.rectTransform.localPosition = topLeft + new Vector3(cellSize.x * x, cellSize.y * y, 0) + halfCellSize;
-
                             grid.rectTransform.sizeDelta = cellSize;
                             _grids[c]                    = grid;
                             c++;

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using core.Managers;
 using Exile.Inventory;
+using LeTai.Asset.TranslucentImage;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -22,6 +24,11 @@ public class InventoryUIManager : Singleton<InventoryUIManager> {
 
     private Dictionary<GameObject, InventoryView> _inventoryViews = new Dictionary<GameObject, InventoryView>();
 
+
+
+    [FoldoutGroup("InventoryRenderingConfigs")] [SerializeField] private TranslucentImage _translucentImage;
+    
+    
     private void Awake() {
         
         Initialize();
@@ -29,7 +36,12 @@ public class InventoryUIManager : Singleton<InventoryUIManager> {
 
     private void Start() {
         Pants.InventoryManager.onItemAdded += item => { Debug.Log($"Detected item added on pants {item.ItemName}"); };
-        
+
+        GameManager.Instance.OnPlayerSpawned += () => {
+            Debug.Log($"Player spawned ; setting up inventory blur effect for player camera");
+            _translucentImage.source = GameManager.Instance.character.orbitCamera.GetComponent<TranslucentImageSource>();
+        };
+
     }
 
     void Initialize() {

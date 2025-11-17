@@ -28,6 +28,7 @@ MonoBehaviour:
   Max_Durability: 0
   _canDrop: 1
   _position: {x: 0, y: 0}
+  _id: 1001
   _iscontainer: 0
   container_shape:
     _width: 1

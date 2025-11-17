@@ -4,17 +4,13 @@ namespace Exile.Inventory
     {
         Any,
         Weapons,
-        MeleWeapons,
-        Clothing_tshirt,
-        clothing_pants,
-        clothing_shoes,
-        Gear_Helmet,
-        Gear_Chest,
-        Gear_Backpack,
+        MeleeWeapons,
+        ClothingShirt,
+        ClothingPants,
+        ClothingShoes,
+        GearHelmet,
+        GearChest,
+        GearBackpack,
         Food,
     }
-
-    
-   
 }
-

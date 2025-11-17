@@ -24,19 +24,19 @@ namespace Exile.Inventory {
         [FoldoutGroup("References")]                  public  TMP_Text                 inventoryViewTMp_Name;
         [FoldoutGroup("References")]                  public  Image                    itemImage;
 
-        [FoldoutGroup("Inventory Settings")] public InventoryManager          InventoryManager;
-        [FoldoutGroup("Inventory Settings")] public InventoryRenderMode       _renderMode         = InventoryRenderMode.Grid;
-        [FoldoutGroup("Inventory Settings")] public bool                      _allow_adding_items = true;
-        [FoldoutGroup("Inventory Settings")] public ItemType                  AllowedItemType     = ItemType.Any;
-        [FoldoutGroup("Inventory Settings")] public ClothingSlots             clothingSlot;
-        [FoldoutGroup("Inventory Settings")] public CharacterEquipmentManager equipmentManager;
+        [FoldoutGroup("Inventory Settings")] public InventoryManager    InventoryManager;
+        [FoldoutGroup("Inventory Settings")] public InventoryRenderMode _renderMode         = InventoryRenderMode.Grid;
+        [FoldoutGroup("Inventory Settings")] public bool                _allow_adding_items = true;
+        [FoldoutGroup("Inventory Settings")] public ItemType            AllowedItemType     = ItemType.Any;
 
-        [FoldoutGroup("Grid Settings")]                                                                      public  int  cellsize                 = 60;
-        [FoldoutGroup("Grid Settings")] [ShowIf("_renderMode", InventoryRenderMode.Single)] [SerializeField] private bool UseRectForSingleGridSize = false;
-        [FoldoutGroup("Grid Settings")] [Range(1, 30)]                                                       public  int  w                        = 5; // columns
-        [FoldoutGroup("Grid Settings")] [Range(1, 30)]                                                       public  int  h                        = 4; // rows
-        [FoldoutGroup("Grid Settings")]                                                                      public  int  incrementHeight          = 10;
-        [FoldoutGroup("Grid Settings")]                                                                      public  int  incrementWidh            = 10;
+        [FoldoutGroup("Grid Settings")]                                                                      public  int           cellsize                 = 60;
+        [FoldoutGroup("Grid Settings")] [ShowIf("_renderMode", InventoryRenderMode.Single)] [SerializeField] private bool          UseRectForSingleGridSize = false;
+        [FoldoutGroup("Grid Settings")] [Range(1, 6)]                                                        public  int           w                        = 5; // columns
+        [FoldoutGroup("Grid Settings")] [Range(1, 30)]                                                       public  int           h                        = 4; // rows
+        [FoldoutGroup("Grid Settings")]                                                                      public  int           incrementHeight          = 10;
+        [FoldoutGroup("Grid Settings")]                                                                      public  int           incrementWidh            = 10;
+        [FoldoutGroup("Grid Settings")] [SerializeField]                                                     private bool          RespectPanelWidth        = false;
+        [FoldoutGroup("Grid Settings")]                                                                      public  RectTransform PanelRect;
 
         [BoxGroup("Debug")] [FoldoutGroup("Debug/Test")] public bool           test_AutoCreate = true;
         [FoldoutGroup("Debug/Test")]                     public List<ItemBase> items           = new List<ItemBase>();
@@ -44,9 +44,8 @@ namespace Exile.Inventory {
         internal bool isActive = false;
 
         private void Start() {
-            if(test_AutoCreate)
+            if (test_AutoCreate)
                 createtab();
-            
         }
 
         public InventoryManager CreateInventoryView(ref ItemBase item) {
@@ -79,39 +78,50 @@ namespace Exile.Inventory {
             int actualWidth  = w;
             int actualHeight = h;
 
-            if (_render == InventoryRenderMode.Single) {
-                actualWidth  = 1;
-                actualHeight = 1;
 
-                Vector2 finalSlotSize;
+            switch (_render) {
+                case InventoryRenderMode.Single:
+                    actualWidth  = 1;
+                    actualHeight = 1;
 
-                if (UseRectForSingleGridSize && parentrects.Length > 0) {
-                    float slotWidth  = parentrects[0].sizeDelta.x - incrementWidh;
-                    float slotHeight = parentrects[0].sizeDelta.y - incrementHeight;
-                    finalSlotSize      = new Vector2(slotWidth, slotHeight);
-                    mainrect.sizeDelta = finalSlotSize;
-                    foreach (var r in parentrects) {
-                        r.sizeDelta = new Vector2(finalSlotSize.x + incrementWidh, finalSlotSize.y + incrementHeight);
+                    Vector2 finalSlotSize;
+
+                    if (UseRectForSingleGridSize && parentrects.Length > 0) {
+                        float slotWidth  = parentrects[0].sizeDelta.x - incrementWidh;
+                        float slotHeight = parentrects[0].sizeDelta.y - incrementHeight;
+                        finalSlotSize      = new Vector2(slotWidth, slotHeight);
+                        mainrect.sizeDelta = finalSlotSize;
+                        foreach (var r in parentrects) {
+                            r.sizeDelta = new Vector2(finalSlotSize.x + incrementWidh, finalSlotSize.y + incrementHeight);
+                        }
                     }
-                }
-                else {
-                    finalSlotSize      = new Vector2(cellsize * w, cellsize * h);
-                    mainrect.sizeDelta = finalSlotSize;
-                    foreach (var r in parentrects) {
-                        r.sizeDelta = new Vector2(mainrect.sizeDelta.x + incrementWidh, mainrect.sizeDelta.y + incrementHeight);
+                    else {
+                        finalSlotSize      = new Vector2(cellsize * w, cellsize * h);
+                        mainrect.sizeDelta = finalSlotSize;
+                        foreach (var r in parentrects) {
+                            r.sizeDelta = new Vector2(mainrect.sizeDelta.x + incrementWidh, mainrect.sizeDelta.y + incrementHeight);
+                        }
                     }
-                }
 
-                _iv_render.cellSize = finalSlotSize;
-            }
-            else {
-                mainrect.sizeDelta = new Vector2(cellsize * w, cellsize * h);
-                foreach (var r in parentrects) {
-                    r.sizeDelta = new Vector2(mainrect.sizeDelta.x + incrementWidh, mainrect.sizeDelta.y + incrementHeight);
-                }
+                    _iv_render.cellSize = finalSlotSize;
+                    break;
+                case InventoryRenderMode.Grid:
 
-                _iv_render.cellSize = new Vector2(cellsize, cellsize);
+                    mainrect.sizeDelta = new Vector2(cellsize * w, cellsize * h);
+                    foreach (var r in parentrects) {
+                        if (mainrect.sizeDelta.x + incrementWidh < PanelRect.sizeDelta.x && RespectPanelWidth) {
+                            r.sizeDelta = new Vector2(PanelRect.sizeDelta.x, mainrect.sizeDelta.y + incrementHeight);
+                        }
+                        else {
+                            r.sizeDelta = new Vector2(mainrect.sizeDelta.x + incrementWidh, mainrect.sizeDelta.y + incrementHeight);
+                        }
+                    }
+                    
+                    
+                    _iv_render.cellSize = new Vector2(cellsize, cellsize);
+                    break;
             }
+
 
             var prov = new InventoryProvider(_render,
                                              _render == InventoryRenderMode.Single
@@ -147,6 +157,9 @@ namespace Exile.Inventory {
 
         [Button("Create TAb")]
         public void createtab() {
+#if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+#endif
             CreateInventoryView(null, _renderMode, AllowedItemType);
         }
 
