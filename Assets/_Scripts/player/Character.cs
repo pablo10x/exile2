@@ -78,11 +78,8 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     #region Prediction Data Structures
 
-    [FoldoutGroup("Reconciliation")] public float positionSnapThreshold   = 5f;   // Snap if error > this
-    [FoldoutGroup("Reconciliation")] public float positionSmoothThreshold = 0.5f; // Smooth if error > this
-    [FoldoutGroup("Reconciliation")] public float rotationSnapThreshold   = 45f;  // Snap if error > this
-    [FoldoutGroup("Reconciliation")] public float rotationSmoothThreshold = 5f;   // Smooth if error > this
-    [FoldoutGroup("Reconciliation")] public float reconcileSmoothTime     = 0.1f; // How long to smooth over
+    [FoldoutGroup("Reconciliation")] public float positionSnapThreshold = 3f; // Snap if error > this
+    [FoldoutGroup("Reconciliation")]  public float ReconsileSmoothTime = 25.5f;
     // Smoothing state
     private Vector3    _reconcilePositionVelocity;
     private float      _reconcileRotationVelocity;
@@ -184,7 +181,8 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     #region Movement Input
 
-    public  float   Steeringsmoothness = 5f;
+    private Vector3 _internalVelocityAdd = Vector3.zero;
+    public  float   Steeringsmoothness   = 5f;
     private Vector3 _lookInputVector;
     private Vector3 _moveInputVector;
 
@@ -244,7 +242,11 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     private void Awake() {
         navMeshAgent.transform.SetParent(transform, false);
         motor.CharacterController = this;
+
+
         InitializeAnimationLockManager();
+
+
         SetTickCallbacks(TickCallback.Tick);
     }
 
@@ -327,60 +329,64 @@ public class Character : TickNetworkBehaviour, ICharacterController {
          * scenario a de-synchronization occurs, but if only predicting
          * a couple ticks the chances are low. */
         // See https:// fish-networking.gitbook.io/docs/manual/guides/prediction/version-2/creating-code/predicting-states
-        if (!IsServerStarted && !IsOwner) {
-            /* If ticked then set last ticked value.
-             * Ticked means the replicate is being run from the tick cycle, more
-             * specifically NOT from a replay/reconcile. */
-            if (state.ContainsTicked()) {
-                /* Dispose of old should it have anything that needs to be cleaned up.
-                 * If you are only using value types in your data you do not need to call Dispose.
-                 * You must implement dispose manually to cache any non-value types, if you wish. */
-                _lastTickedReplicateData.Dispose();
-                // Set new.
-                _lastTickedReplicateData = rd;
-            }
-            /* In the future means there is no way the data can be known to this client
-             * yet. For example, the client is running this script locally and due to
-             * how networking works, they have not yet received the latest information from
-             * the server.
-             *
-             * If in the future then we are only going to predict up to
-             * a certain amount of ticks in the future. This is us assuming that the
-             * server (or client which owns this in this case) is going to use the
-             * same input for at least X number of ticks. You can predict none, or as many
-             * as you like, but the more inputs you predict the higher likeliness of guessing
-             * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
-            else if (state.IsFuture()) {
-                /* Predict up to 1 tick more. */
-                if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1) {
-                    useDefaultForces = true;
-                }
-                else {
-                    /* If here we are predicting the future. */
-
-                    /* You likely do not need to dispose rd here since it would be default
-                     * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
-                     * contain any garbage collection. */
-                    rd.Dispose();
-
-                    rd = _lastTickedReplicateData;
-
-                    /* There are some fields you might not want to predict, for example
-                     * jump. The odds of a client pressing jump two ticks in a row is unlikely.
-                     * The stamina check below would likely prevent such a scenario.
-                     *
-                     * We're going to unset jump for this reason. */
-                    //rd.Jump = false;
-
-                    /* Be aware that future predicting is not a one-size fits all
-                     * feature. How much you predict into the future, if at all, depends
-                     * on your game mechanics and your desired outcome. */
-                }
-            }
-        }
+        // if (!IsServerStarted && !IsOwner) {
+        //     /* If ticked then set last ticked value.
+        //      * Ticked means the replicate is being run from the tick cycle, more
+        //      * specifically NOT from a replay/reconcile. */
+        //     if (state.ContainsTicked()) {
+        //         /* Dispose of old should it have anything that needs to be cleaned up.
+        //          * If you are only using value types in your data you do not need to call Dispose.
+        //          * You must implement dispose manually to cache any non-value types, if you wish. */
+        //         _lastTickedReplicateData.Dispose();
+        //         // Set new.
+        //         _lastTickedReplicateData = rd;
+        //     }
+        //     /* In the future means there is no way the data can be known to this client
+        //      * yet. For example, the client is running this script locally and due to
+        //      * how networking works, they have not yet received the latest information from
+        //      * the server.
+        //      *
+        //      * If in the future then we are only going to predict up to
+        //      * a certain amount of ticks in the future. This is us assuming that the
+        //      * server (or client which owns this in this case) is going to use the
+        //      * same input for at least X number of ticks. You can predict none, or as many
+        //      * as you like, but the more inputs you predict the higher likeliness of guessing
+        //      * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
+        //     else if (state.IsFuture()) {
+        //         /* Predict up to 1 tick more. */
+        //         if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1) {
+        //             useDefaultForces = true;
+        //         }
+        //         else {
+        //             /* If here we are predicting the future. */
+        //
+        //             /* You likely do not need to dispose rd here since it would be default
+        //              * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
+        //              * contain any garbage collection. */
+        //             rd.Dispose();
+        //
+        //             rd = _lastTickedReplicateData;
+        //
+        //             /* There are some fields you might not want to predict, for example
+        //              * jump. The odds of a client pressing jump two ticks in a row is unlikely.
+        //              * The stamina check below would likely prevent such a scenario.
+        //              *
+        //              * We're going to unset jump for this reason. */
+        //             //rd.Jump = false;
+        //
+        //             /* Be aware that future predicting is not a one-size fits all
+        //              * feature. How much you predict into the future, if at all, depends
+        //              * on your game mechanics and your desired outcome. */
+        //         }
+        //     }
+        // }
 
 
         ProcessReplicatedInput(rd);
+
+        // KinematicCharacterSystem.PreSimulationInterpolationUpdate(delta);
+        //KinematicCharacterSystem.Simulate(delta, KinematicCharacterSystem.CharacterMotors, KinematicCharacterSystem.PhysicsMovers);
+        // KinematicCharacterSystem.PostSimulationInterpolationUpdate(delta);
 
 
         // The KinematicCharacterMotor will call our UpdateVelocity
@@ -403,16 +409,21 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         float rotationError = Quaternion.Angle(rd.Rotation, motor.TransientRotation);
 
         // Log the error for debugging. You can adjust the threshold to only log significant deviations.
-        if (positionError > 2f) {
-            //  Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
-            // Apply the server's correction
-            motor.SetPosition(rd.Position, false);
-            motor.BaseVelocity = rd.Velocity;
+        if (positionError > 0.5f) {
+            Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
+            if (positionError > positionSnapThreshold) {
+                motor.SetPosition(rd.Position, false);
+            }
+            else {
+                Vector3 velocityCorrection = (rd.Position - motor.TransientPosition) / ReconsileSmoothTime;
+                AddVelocity(velocityCorrection);
+            }
+
         }
 
         if (rotationError > 20.1f) {
             //    Debug.Log($"Reconcile >> {Owner.ClientId}.  Rot error: {rotationError:F2} degrees.");
-            // motor.SetRotation(rd.Rotation);
+            //motor.SetRotation(rd.Rotation);
         }
 
         // --- End Debug Comparison ---
@@ -420,9 +431,12 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         // Update state
         if (_currentCharacterState != rd.State) {
             //   Debug.Log($"Character State mismatch  current: {_currentCharacterState} || RD State: {rd.State}");
-            _currentCharacterState = rd.State;
+            // _currentCharacterState = rd.State;
+            SetState(rd.State);
         }
     }
+
+    
 
     private void Start() {
         currentGravity   = initialGravity;
@@ -591,6 +605,10 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         currentRotation = Quaternion.LookRotation(smoothedDirection, motor.CharacterUp);
     }
 
+    public void AddVelocity(Vector3 velocity) {
+        _internalVelocityAdd += velocity;
+    }
+
     public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime) {
         if (motor.GroundingStatus.IsStableOnGround) {
             HandleGroundedMovement(ref currentVelocity, deltaTime);
@@ -600,6 +618,11 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         }
 
         if (isFrozen) currentVelocity = Vector3.zero;
+        // Take into account additive velocity
+        if (_internalVelocityAdd.sqrMagnitude > 0f) {
+            currentVelocity      += _internalVelocityAdd;
+            _internalVelocityAdd =  Vector3.zero;
+        }
     }
 
     public void AfterCharacterUpdate(float deltaTime) {
@@ -657,14 +680,13 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     #region Movement State Management
 
-
-
     private void UpdateMovementState(Vector2 directions) {
         // Handle falling (highest priority)
         if (!motor.GroundingStatus.IsStableOnGround && !isJumping) {
             if (CurrentCharacterState != CharacterState.Falling) {
                 CurrentCharacterState = CharacterState.Falling;
             }
+
             return;
         }
 
@@ -681,12 +703,14 @@ public class Character : TickNetworkBehaviour, ICharacterController {
                 MaxStableMoveSpeed = CROUCH_SPEED;
                 pa.UpdateCrouchAnimation(new Vector2(directions.x, directions.y));
                 useInputForRotation = directions.y > 0.4f;
-            } else {
+            }
+            else {
                 MaxStableMoveSpeed  = 0f;
                 useInputForRotation = false;
                 pa.resetCrouchAnimation();
                 pa.PlayAnimation(pa.crouch_idle, 0.3f);
             }
+
             return;
         }
 
@@ -698,6 +722,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
             if (CurrentCharacterState != CharacterState.Idle) {
                 SetState(CharacterState.Idle);
             }
+
             return;
         }
 
@@ -706,6 +731,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
             if (CurrentCharacterState != CharacterState.Running) {
                 SetState(CharacterState.Running);
             }
+
             return;
         }
 

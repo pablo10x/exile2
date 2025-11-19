@@ -16,6 +16,7 @@ namespace Exile.Inventory
     {
         
         string ItemName { get; }
+        int ID { get; }
         
         /// <summary>
         /// The sprite of this item

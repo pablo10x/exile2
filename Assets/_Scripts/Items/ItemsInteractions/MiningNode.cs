@@ -154,7 +154,7 @@ public class MiningNode : NetworkBehaviour , IInteractable
     
     
     public void Interact(PlayerInteraction player) {
-        throw new System.NotImplementedException();
+        player.InteractWithMiningNode(this);
     }
 
 

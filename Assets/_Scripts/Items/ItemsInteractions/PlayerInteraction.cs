@@ -192,7 +192,7 @@ public class PlayerInteraction : NetworkBehaviour
         ServerPickupItem(itemPickup);
     }
     
-    private void InteractWithMiningNode(MiningNode node)
+    public void InteractWithMiningNode(MiningNode node)
     {
         if (enableDebugLogs)
         {

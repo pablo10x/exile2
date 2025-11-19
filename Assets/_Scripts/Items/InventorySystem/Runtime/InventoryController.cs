@@ -140,7 +140,7 @@ namespace Exile.Inventory
                 if (_draggedItem != null)
                 {
                     // Update the items position
-                   // _draggedItem.position = eventData.position;
+                    _draggedItem.position = eventData.position;
                 }
             }
 

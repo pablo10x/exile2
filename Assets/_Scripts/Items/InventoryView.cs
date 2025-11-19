@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using _Scripts.Items;
 using core.player;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
@@ -43,6 +44,8 @@ namespace Exile.Inventory {
 
         internal bool isActive = false;
 
+        public Action OnInvetoryViewCreated;
+
         private void Start() {
             if (test_AutoCreate)
                 createtab();
@@ -54,6 +57,17 @@ namespace Exile.Inventory {
                 w = item.container_shape.width;
                 return CreateInventoryView(item, _renderMode, AllowedItemType = ItemType.Any);
             }
+
+            return null;
+        }
+
+        public InventoryManager CreateInventoryView(ref NetItemContainer container) {
+
+            h = container.Height;
+            w = container.Width;
+            inventoryViewTMp_Name.text = container.Name;
+                return CreateInventoryView(null, _renderMode, AllowedItemType = ItemType.Any);
+            
 
             return null;
         }
@@ -107,9 +121,14 @@ namespace Exile.Inventory {
                     break;
                 case InventoryRenderMode.Grid:
 
+                    //a fix for runtime instantiating with respect panel but null transform
+                    if (RespectPanelWidth && PanelRect == null) {
+                        PanelRect = GetComponentInParent<RectTransform>();
+                    }
+                    
                     mainrect.sizeDelta = new Vector2(cellsize * w, cellsize * h);
                     foreach (var r in parentrects) {
-                        if (mainrect.sizeDelta.x + incrementWidh < PanelRect.sizeDelta.x && RespectPanelWidth) {
+                        if (PanelRect != null && mainrect.sizeDelta.x + incrementWidh < PanelRect.sizeDelta.x && RespectPanelWidth) {
                             r.sizeDelta = new Vector2(PanelRect.sizeDelta.x, mainrect.sizeDelta.y + incrementHeight);
                         }
                         else {
@@ -138,7 +157,7 @@ namespace Exile.Inventory {
 
             InventoryManager.onItemAdded   += OnItemAdded;
             InventoryManager.onItemRemoved += OnItemRemoved;
-
+            OnInvetoryViewCreated?.Invoke();
 
             return InventoryManager;
         }

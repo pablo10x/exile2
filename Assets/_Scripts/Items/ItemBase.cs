@@ -65,6 +65,8 @@ namespace Exile.Inventory
             set => _name = value;
         }
 
+        public int ID => Id;
+
         /// <inheritdoc />
         public Sprite sprite
         {

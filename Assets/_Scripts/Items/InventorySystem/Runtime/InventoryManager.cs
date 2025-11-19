@@ -1,25 +1,23 @@
 using System;
 using System.Linq;
 using Exile.Inventory;
-
+using FishNet.Object;
 using UnityEngine;
 
-
-public class InventoryManager : IInventoryManager {
-    private Vector2Int _size = Vector2Int.one;
+public class InventoryManager :  IInventoryManager {
+    private Vector2Int         _size = Vector2Int.one;
     private IInventoryProvider _provider;
 
     [SerializeField] private bool _AllowAddingitems = true;
-    private Rect _fullRect;
+    private                  Rect _fullRect;
 
     public InventoryManager(IInventoryProvider provider, int width, int height, bool allowadditems) {
-        _provider = provider;
+        _provider         = provider;
         _AllowAddingitems = allowadditems;
 
         Rebuild();
         Resize(width, height);
     }
-
 
     /// <inheritdoc />
     //public InventoryContainer _InventoryContainer = ;
@@ -47,9 +45,9 @@ public class InventoryManager : IInventoryManager {
     private void HandleSizeChanged() {
         // Drop all items that no longer fit the inventory
         for (int i = 0; i < allItems.Length;) {
-            var item = allItems[i];
+            var item            = allItems[i];
             var shouldBeDropped = false;
-            var padding = Vector2.one * 0.01f;
+            var padding         = Vector2.one * 0.01f;
 
             if (!_fullRect.Contains(item.GetMinPoint() + padding) || !_fullRect.Contains(item.GetMaxPoint() - padding)) {
                 shouldBeDropped = true;
@@ -80,14 +78,12 @@ public class InventoryManager : IInventoryManager {
 
     public void Dispose() {
         _provider = null;
-        allItems = null;
+        allItems  = null;
     }
 
     /// <inheritdoc />
-    public bool isFull
-    {
-        get
-        {
+    public bool isFull {
+        get {
             if (_provider.isInventoryFull) return true;
 
             for (var x = 0; x < width; x++) {
@@ -160,9 +156,9 @@ public class InventoryManager : IInventoryManager {
         }
 
         // --- 2. State Capture ---
-        var pos1 = item1.position;
+        var pos1     = item1.position;
         var rotated1 = item1.Rotated;
-        var pos2 = item2.position;
+        var pos2     = item2.position;
         var rotated2 = item2.Rotated;
 
         // --- 3. Removal ---
@@ -170,7 +166,7 @@ public class InventoryManager : IInventoryManager {
         if (!TryRemove(item1) || !TryRemove(item2)) {
             // This case is highly unlikely but is a safeguard.
             // Attempt to rebuild the inventory to its last known good state.
-            Rebuild(); 
+            Rebuild();
             return false;
         }
 
@@ -185,7 +181,8 @@ public class InventoryManager : IInventoryManager {
             TryAddAt(item1, pos2);
             TryAddAt(item2, pos1);
             return true;
-        } else {
+        }
+        else {
             // Swap is not possible, return items to their original positions.
             TryAddAt(item1, pos1);
             TryAddAt(item2, pos2);
@@ -196,7 +193,7 @@ public class InventoryManager : IInventoryManager {
     /// <inheritdoc />
     public IInventoryItem[] GetAtPoint(Vector2Int point, Vector2Int size) {
         var posibleItems = new IInventoryItem[size.x * size.y];
-        var c = 0;
+        var c            = 0;
         for (var x = 0; x < size.x; x++) {
             for (var y = 0; y < size.y; y++) {
                 posibleItems[c] = GetAtPoint(point + new Vector2Int(x, y));
@@ -204,7 +201,9 @@ public class InventoryManager : IInventoryManager {
             }
         }
 
-        return posibleItems.Distinct().Where(x => x != null).ToArray();
+        return posibleItems.Distinct()
+                           .Where(x => x != null)
+                           .ToArray();
     }
 
     /// <inheritdoc />
@@ -240,9 +239,8 @@ public class InventoryManager : IInventoryManager {
 
     /// <inheritdoc />
     public bool CanAddAt(IInventoryItem item, Vector2Int point) {
-
         if (!_provider.CanAddInventoryItem(item) || _provider.isInventoryFull || _AllowAddingitems == false) {
-          //  Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
+            //  Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
             return false;
         }
 
@@ -257,7 +255,7 @@ public class InventoryManager : IInventoryManager {
         // Check if item is outside of inventory
         if (!_fullRect.Contains(item.GetMinPoint() + padding) || !_fullRect.Contains(item.GetMaxPoint() - padding)) {
             item.position = previousPoint;
-            
+
             return false;
         }
 
@@ -265,7 +263,7 @@ public class InventoryManager : IInventoryManager {
         // If ANY item overlaps, we cannot add
         if (allItems.Any(otherItem => item.Overlaps(otherItem))) {
             item.position = previousPoint;
-            
+
             return false;
         }
 
@@ -301,9 +299,12 @@ public class InventoryManager : IInventoryManager {
         }
 
         Rebuild(true);
+       
         onItemAdded?.Invoke(item);
         return true;
     }
+
+    
 
     /// <inheritdoc />
     public bool CanAdd(IInventoryItem item) {
@@ -322,11 +323,10 @@ public class InventoryManager : IInventoryManager {
             Vector2Int point;
             // Check if item is not already in inventory and we can find a spot for it
             if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
-            
                 return CanAddAt(item, point); // FIXED: Return the result of CanAddAt
             }
 
-            
+
             return false;
         }
         catch (Exception e) {
@@ -349,7 +349,7 @@ public class InventoryManager : IInventoryManager {
                 return true;
             }
         }
-        
+
         // If there's remaining quantity or it couldn't be stacked, find a new slot.
         Vector2Int point;
         return GetFirstPointThatFitsItem(item, out point) && TryAddAt(item, point);
@@ -369,12 +369,12 @@ public class InventoryManager : IInventoryManager {
         foreach (var existingItem in allItems) {
             // Check if items are the same and the existing stack is not full
             if (existingItem.ItemName == itemToAdd.ItemName && existingItem.Quantity < existingItem.maxQuantity) {
-                int spaceInStack = existingItem.maxQuantity - existingItem.Quantity;
+                int spaceInStack     = existingItem.maxQuantity - existingItem.Quantity;
                 int amountToTransfer = Mathf.Min(spaceInStack, itemToAdd.Quantity);
 
                 if (amountToTransfer > 0) {
                     existingItem.Quantity += amountToTransfer;
-                    itemToAdd.Quantity -= amountToTransfer;
+                    itemToAdd.Quantity    -= amountToTransfer;
 
                     // Notify listeners that the existing item has been updated
                     onItemChanged?.Invoke(existingItem);
@@ -387,81 +387,82 @@ public class InventoryManager : IInventoryManager {
                 }
             }
         }
+
         return stacked;
     }
+
     /// <summary>
-/// Attempts to add an item to the inventory, trying both normal and rotated orientations.
-/// If the item doesn't fit normally but fits when rotated, it will be marked as rotated.
-/// </summary>
-/// <param name="item">The item to add</param>
-/// <returns>True if the item was successfully added (in either orientation)</returns>
-public bool TryAddWithRotation(IInventoryItem item) {
-    if (!_AllowAddingitems) {
-        Debug.LogWarning("items can't be added because inventory is blocked");
-        OnInventoryBlocked?.Invoke(item);
-        return false;
-    }
-
-    if (_provider.isInventoryFull) {
-        Debug.LogWarning("items can't be added because inventory is full");
-        return false;
-    }
-
-    // Store original dimensions
-    int originalWidth = item.width;
-    int originalHeight = item.height;
-    bool originalRotated = item.Rotated;
-
-    // Attempt to stack the item first, regardless of rotation
-    if (TryStack(item)) {
-        // If the item was fully stacked, we are done.
-        if (item.Quantity <= 0) {
-            return true;
+    /// Attempts to add an item to the inventory, trying both normal and rotated orientations.
+    /// If the item doesn't fit normally but fits when rotated, it will be marked as rotated.
+    /// </summary>
+    /// <param name="item">The item to add</param>
+    /// <returns>True if the item was successfully added (in either orientation)</returns>
+    public bool TryAddWithRotation(IInventoryItem item) {
+        if (!_AllowAddingitems) {
+            Debug.LogWarning("items can't be added because inventory is blocked");
+            OnInventoryBlocked?.Invoke(item);
+            return false;
         }
-    }
 
-    try {
-        // First, try adding in normal orientation
-        item.Rotated = false;
-        item.width = originalWidth;
-        item.height = originalHeight;
+        if (_provider.isInventoryFull) {
+            Debug.LogWarning("items can't be added because inventory is full");
+            return false;
+        }
 
-        Vector2Int point;
-        if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
-            if (TryAddAt(item, point)) {
+        // Store original dimensions
+        int  originalWidth   = item.width;
+        int  originalHeight  = item.height;
+        bool originalRotated = item.Rotated;
+
+        // Attempt to stack the item first, regardless of rotation
+        if (TryStack(item)) {
+            // If the item was fully stacked, we are done.
+            if (item.Quantity <= 0) {
                 return true;
             }
         }
 
-        // If normal orientation failed, try rotated orientation
+        try {
+            // First, try adding in normal orientation
+            item.Rotated = false;
+            item.width   = originalWidth;
+            item.height  = originalHeight;
 
-        
-        item.width = originalHeight;  // Swap dimensions
-        item.height = originalWidth;
-        item.Rotated = true;
-        if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
-            if (TryAddAt(item, point)) {
-               
-                return true;
+            Vector2Int point;
+            if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
+                if (TryAddAt(item, point)) {
+                    return true;
+                }
             }
-        }
 
-        // Both orientations failed, restore original state
-        item.width = originalWidth;
-        item.height = originalHeight;
-        item.Rotated = originalRotated;
-        return false;
+            // If normal orientation failed, try rotated orientation
+
+
+            item.width   = originalHeight; // Swap dimensions
+            item.height  = originalWidth;
+            item.Rotated = true;
+            if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
+                if (TryAddAt(item, point)) {
+                    return true;
+                }
+            }
+
+            // Both orientations failed, restore original state
+            item.width   = originalWidth;
+            item.height  = originalHeight;
+            item.Rotated = originalRotated;
+            return false;
+        }
+        catch (Exception e) {
+            // Restore original state on error
+            item.width   = originalWidth;
+            item.height  = originalHeight;
+            item.Rotated = originalRotated;
+
+            Debug.LogWarning($"Error adding item with rotation: {e}");
+            return false;
+        }
     }
-    catch (Exception e) {
-        // Restore original state on error
-        item.width = originalWidth;
-        item.height = originalHeight;
-        item.Rotated = originalRotated;
-        
-        Debug.LogWarning($"Error adding item with rotation: {e}");
-        return false;
-    }
-}
 
     /// <inheritdoc />
     public bool CanSwap(IInventoryItem item) {
@@ -486,7 +487,6 @@ public bool TryAddWithRotation(IInventoryItem item) {
     /// <inheritdoc />
     public bool Contains(IInventoryItem item) => allItems.Contains(item);
 
-
     /// <inheritdoc />
     public bool CanRemove(IInventoryItem item) => Contains(item) && _provider.CanRemoveInventoryItem(item);
 
@@ -494,34 +494,34 @@ public bool TryAddWithRotation(IInventoryItem item) {
     public bool CanDrop(IInventoryItem item) => Contains(item) && _provider.CanDropInventoryItem(item) && item.canDrop;
 
     /*
-  * Get first free point that will fit the given item
-  */
+     * Get first free point that will fit the given item
+     */
     public bool GetFirstPointThatFitsItem(IInventoryItem item, out Vector2Int point) {
         if (DoesItemFit(item)) {
             // Search from top-to-bottom, then left-to-right
             for (var y = height - 1; y >= 0; y--) {
                 for (var x = 0; x < width; x++) {
                     point = new Vector2Int(x, y);
-             
+
                     if (CanAddAt(item, point)) return true;
                 }
             }
-        }else Debug.LogWarning($"Couldn't find a point that fits item {item.ItemName}");
+        }
+        else Debug.LogWarning($"Couldn't find a point that fits item {item.ItemName}");
 
-        
 
         point = Vector2Int.zero;
         return false;
     }
 
-    /* 
-  * Returns true if given items physically fits within this inventory
-  */
+    /*
+     * Returns true if given items physically fits within this inventory
+     */
     private bool DoesItemFit(IInventoryItem item) => item.width <= width && item.height <= height;
 
     /*
-  * Returns the center post position for a given item within this inventory
-  */
+     * Returns the center post position for a given item within this inventory
+     */
     private Vector2Int GetCenterPosition(IInventoryItem item) {
         return new Vector2Int((_size.x - item.width) / 2, (_size.y - item.height) / 2);
     }

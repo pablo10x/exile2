@@ -45,7 +45,7 @@ namespace core.player {
                 AnimancerState animationState;
                 switch (_character.CurrentCharacterState) {
                     case Character.CharacterState.Idle:
-                        animationState              =  _playerAnimator.PlayAnimation(_playerAnimator.combat_BareFistPunches_idle[r].AnimationClip, 0.1f, FadeMode.FixedSpeed);
+                        animationState              =  _playerAnimator.PlayActionAnimation(_playerAnimator.combat_BareFistPunches_idle[r].AnimationClip, 0.1f, FadeMode.FixedSpeed);
                         animationState.Events(this).OnEnd += () => { _playerAnimator.PlayAnimation(_playerAnimator.anim_idle); };
                         break;
 

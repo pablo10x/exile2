@@ -15,14 +15,14 @@ public class PlayerInventory : NetworkBehaviour {
     private void Awake() { }
 
     public override void OnStartClient() {
-        Debug.Log($"initializing inventory for player | owner: {IsOwner} | is server: {IsServerInitialized}");
+       // Debug.Log($"initializing inventory for player | owner: {IsOwner} | is server: {IsServerInitialized}");
     }
 
     [Button("Test equip ")]
     public void TestEquip() {
         var it = itemDatabase.GetItem(itemToEquip.name);
         equipmentManager.EquipBodyItem(it as ItemCloth);
-        InventoryUIManager.Instance.AssignItemToTab(it);
+        InventoryUIManager.Instance.AssignItemToPlayerTab(it);
     }
 
     public void EquipHeadGear(ItemBase item) {
