@@ -13,7 +13,7 @@ namespace Exile.Inventory.Examples
             _text = GetComponentInChildren<Text>();
             _text.text = string.Empty;
 
-            var allControllers = GameObject.FindObjectsOfType<InventoryController>();
+            var allControllers = GameObject.FindObjectsByType<InventoryController>(FindObjectsSortMode.None);
 
             foreach (var controller in allControllers)
             {

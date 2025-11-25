@@ -1,9 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using _Scripts.Items;
 using core.player;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
+using Exile.Inventory.Network;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace Exile.Inventory {
         [FoldoutGroup("References")]                  public  TMP_Text                 inventoryViewTMp_Name;
         [FoldoutGroup("References")]                  public  Image                    itemImage;
 
-        [FoldoutGroup("Inventory Settings")] public InventoryManager    InventoryManager;
+        [FoldoutGroup("Inventory Settings")] public  InventoryManager    InventoryManager;
         [FoldoutGroup("Inventory Settings")] public InventoryRenderMode _renderMode         = InventoryRenderMode.Grid;
         [FoldoutGroup("Inventory Settings")] public bool                _allow_adding_items = true;
         [FoldoutGroup("Inventory Settings")] public ItemType            AllowedItemType     = ItemType.Any;
@@ -47,32 +48,29 @@ namespace Exile.Inventory {
         public Action OnInvetoryViewCreated;
 
         private void Start() {
-            if (test_AutoCreate)
-                createtab();
+            
+        }
+
+
+        public InventoryManager CreateInventoryView(ref InventoryManager inventoryManager) {
+           
+                return CreateInventoryView(inventoryManager, null, _renderMode, AllowedItemType = ItemType.Any);
+            
+
+          
         }
 
         public InventoryManager CreateInventoryView(ref ItemBase item) {
             if (item._iscontainer) {
                 h = item.container_shape.height;
                 w = item.container_shape.width;
-                return CreateInventoryView(item, _renderMode, AllowedItemType = ItemType.Any);
+                return CreateInventoryView(item.ContainerInventory, item, _renderMode, AllowedItemType = ItemType.Any);
             }
 
             return null;
         }
 
-        public InventoryManager CreateInventoryView(ref NetItemContainer container) {
-
-            h = container.Height;
-            w = container.Width;
-            inventoryViewTMp_Name.text = container.Name;
-                return CreateInventoryView(null, _renderMode, AllowedItemType = ItemType.Any);
-            
-
-            return null;
-        }
-
-        public InventoryManager CreateInventoryView(IInventoryItem item, InventoryRenderMode _render, ItemType _alloweditems = ItemType.Any) {
+        public InventoryManager CreateInventoryView(InventoryManager _inventoryManager, IInventoryItem item, InventoryRenderMode _render, ItemType _alloweditems = ItemType.Any) {
             _iv_render = GetComponentInChildren<InventoryRenderer>();
             if (_iv_render == null) {
                 _iv_render = GetComponent<InventoryRenderer>();
@@ -83,10 +81,14 @@ namespace Exile.Inventory {
                 return null;
             }
 
+            // If we are opening a container, the _inventoryManager is passed directly.
+            // We can get the name and size from it.
             if (item != null) {
                 inventoryViewTMp_Name.text = item.ItemName;
                 itemImage.enabled          = true;
                 itemImage.sprite           = item.sprite;
+            } else if (_inventoryManager != null) {
+                inventoryViewTMp_Name.text = _inventoryManager.inventoryName;
             }
 
             int actualWidth  = w;
@@ -147,41 +149,30 @@ namespace Exile.Inventory {
                                                  ? 1
                                                  : -1,
                                              _alloweditems);
-            InventoryManager = new InventoryManager(prov, actualWidth, actualHeight, _allow_adding_items);
-            _iv_render.SetInventory(InventoryManager, _render);
+            
+            InventoryManager = _inventoryManager; // Assign the manager passed in.
+            _iv_render.SetInventory(_inventoryManager, _render);
 
             if (iconPlaceHolder != null) {
-                iconPlaceHolder.SetupEvents(InventoryManager);
+                iconPlaceHolder.SetupEvents(_inventoryManager);
             }
 
 
-            InventoryManager.onItemAdded   += OnItemAdded;
-            InventoryManager.onItemRemoved += OnItemRemoved;
+            // _inventoryManager.onItemAdded   += OnItemAdded;
+            // _inventoryManager.onItemRemoved += OnItemRemoved;
+
+            
+            
             OnInvetoryViewCreated?.Invoke();
 
             return InventoryManager;
         }
 
-        private void OnItemAdded(IInventoryItem item) { }
+       
 
-        private void OnItemRemoved(IInventoryItem item) { }
+        
 
-        public void AddItem(ItemBase _item) {
-            var it = _item.CreateInstance();
-            if (InventoryManager != null) {
-                if (InventoryManager.TryAddWithRotation(it)) { }
-            }
-            else Debug.LogError("mgr err");
-        }
-
-        [Button("Create TAb")]
-        public void createtab() {
-#if UNITY_EDITOR
-            if (!Application.isPlaying) return;
-#endif
-            CreateInventoryView(null, _renderMode, AllowedItemType);
-        }
-
+        
         [Button("Clear")]
         private void Clear() {
             if (InventoryManager != null) {
@@ -197,17 +188,11 @@ namespace Exile.Inventory {
             }
         }
 
-        [Button("Add random item")]
-        public void addrandom() {
-            foreach (var it in items) {
-                AddItem(it);
-            }
-        }
+       
 
         public void ResetView() {
             if (InventoryManager != null) {
-                InventoryManager.onItemAdded   -= OnItemAdded;
-                InventoryManager.onItemRemoved -= OnItemRemoved;
+               
                 InventoryManager.Clear();   // Clear all items from the inventory
                 InventoryManager.Dispose(); // Dispose of the inventory manager resources
                 InventoryManager = null;
@@ -235,5 +220,7 @@ namespace Exile.Inventory {
             // Deactivate the GameObject itself, handled by the pool manager
             gameObject.SetActive(false);
         }
+
+      
     }
 }

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using Exile.Inventory.Network;
 using FishNet.Object.Synchronizing;
 namespace _Scripts.Items {
 
@@ -15,17 +16,20 @@ namespace _Scripts.Items {
 
     [Serializable]
     public struct NetItemContainer {
+        public InventoryManager inventoryManager;
         public string Name;
-        public List<NetItem> Items;
+        public List<NetworkedItemData> Items;
         public int Width;
         public int Height;
 
-        public NetItemContainer(string name, List<NetItem> items, int width, int height) {
+        public NetItemContainer(ref InventoryManager _inventorymanager, string name, List<NetworkedItemData> items, int width, int height) {
             Name   = name;
             Items  = items;
             Width  = width;
             Height = height;
+            inventoryManager = _inventorymanager;
         }
 
+       
     }
 }

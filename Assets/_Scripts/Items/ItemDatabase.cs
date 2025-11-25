@@ -22,9 +22,9 @@ public class ItemDatabase : ScriptableObject
         return _items.FirstOrDefault(item => item.Id == id);
     }
 
-    public ItemBase GetItem(string name)
+    public ItemBase GetItem(string itemName)
     {
-        return _items.FirstOrDefault(item => item.ItemName == name);
+        return _items.FirstOrDefault(item => item.ItemName == itemName);
     }
 
 #if UNITY_EDITOR

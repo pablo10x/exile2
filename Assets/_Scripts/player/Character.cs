@@ -317,7 +317,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
         // Always use the tickDelta as your delta when performing actions inside replicate.
         float delta            = (float)TimeManager.TickDelta;
-        bool  useDefaultForces = false;
+       // bool  useDefaultForces = false;
 
         /* When client only run some checks to
          * further predict the clients future movement.
@@ -410,7 +410,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
         // Log the error for debugging. You can adjust the threshold to only log significant deviations.
         if (positionError > 0.5f) {
-            Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
+           // Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
             if (positionError > positionSnapThreshold) {
                 motor.SetPosition(rd.Position, false);
             }

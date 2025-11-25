@@ -137,7 +137,7 @@ public class ResourceChecker : EditorWindow {
 	[MenuItem ("Window/Resource Checker")]
 	static void Init ()
 	{  
-		ResourceChecker window = (ResourceChecker) EditorWindow.GetWindow (typeof (ResourceChecker));
+		ResourceChecker window = (ResourceChecker) GetWindow (typeof (ResourceChecker));
 		window.CheckResources();
 		window.minSize=new Vector2(MinWidth,475);
 	}
@@ -682,7 +682,7 @@ public class ResourceChecker : EditorWindow {
 			Material tMaterial = tMaterialDetails.material;
 			if (tMaterial != null)
 			{
-				var dependencies = EditorUtility.CollectDependencies(new UnityEngine.Object[] { tMaterial });
+				var dependencies = EditorUtility.CollectDependencies(new Object[] { tMaterial });
 				foreach (Object obj in dependencies)
 				{
 					if (obj is Texture)
@@ -855,7 +855,7 @@ public class ResourceChecker : EditorWindow {
 
 				foreach (FieldInfo field in fields)
 				{
-					System.Type fieldType = field.FieldType;
+					Type fieldType = field.FieldType;
 					if (fieldType == typeof(Sprite))
 					{
 						Sprite tSprite = field.GetValue(script) as Sprite;
@@ -903,7 +903,7 @@ public class ResourceChecker : EditorWindow {
 									ActiveTextures.Add(tSpriteTextureDetail);
 								}
 							}
-							var dependencies = EditorUtility.CollectDependencies(new UnityEngine.Object[] { tMaterial });
+							var dependencies = EditorUtility.CollectDependencies(new Object[] { tMaterial });
 							foreach (Object obj in dependencies)
 							{
 								if (obj is Texture)

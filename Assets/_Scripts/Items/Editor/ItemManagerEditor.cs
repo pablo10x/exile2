@@ -44,7 +44,7 @@ public class ItemManagerEditor : OdinMenuEditorWindow
 
     protected override void OnBeginDrawEditors()
     {
-        OdinMenuTreeSelection selected = this.MenuTree.Selection;
+        OdinMenuTreeSelection selected = MenuTree.Selection;
 
         SirenixEditorGUI.BeginHorizontalToolbar();
         {

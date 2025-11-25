@@ -20,7 +20,7 @@ public class StatsUI : MonoBehaviour {
     [BoxGroup("Color Change")]  [SerializeField] private Gradient colorGradient; // Color from empty to full
 
     [FoldoutGroup("Tween Settings")] [SerializeField] private float tweenDuration = 0.3f;          // seconds for smooth fill
-    [FoldoutGroup("Tween Settings")] [SerializeField] private Ease  tweenEase     = Ease.Linear; // easing type
+  //  [FoldoutGroup("Tween Settings")] [SerializeField] private Ease  tweenEase     = Ease.Linear; // easing type
     private                                                                                      float currentValue;
 
     /// <summary>

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Exile.Inventory;
+using Exile.Inventory.Network;
 using FishNet.Object;
 using UnityEngine;
 
@@ -8,15 +9,25 @@ public class InventoryManager :  IInventoryManager {
     private Vector2Int         _size = Vector2Int.one;
     private IInventoryProvider _provider;
 
+// Add this property to store the network ID
+    public int networkInventoryId { get; set; } = -1;
+
+    public NetworkInventoryBehaviour NetworkInventoryBehaviour;
+    public string inventoryName { get; set; } = "DefaultInventory";
+    
+    // Helper property to check if registered
     [SerializeField] private bool _AllowAddingitems = true;
     private                  Rect _fullRect;
 
-    public InventoryManager(IInventoryProvider provider, int width, int height, bool allowadditems) {
+    public InventoryManager(IInventoryProvider provider, int width, int height, bool allowadditems = true, string name = "", NetworkInventoryBehaviour _networkInventoryBehaviour = null) {
         _provider         = provider;
         _AllowAddingitems = allowadditems;
 
+        NetworkInventoryBehaviour = _networkInventoryBehaviour;
+        inventoryName = name ?? inventoryName;
         Rebuild();
         Resize(width, height);
+        // Register with network - ID is automatically stored in inventory.networkInventoryId
     }
 
     /// <inheritdoc />
@@ -77,6 +88,7 @@ public class InventoryManager :  IInventoryManager {
     }
 
     public void Dispose() {
+
         _provider = null;
         allItems  = null;
     }
@@ -240,7 +252,7 @@ public class InventoryManager :  IInventoryManager {
     /// <inheritdoc />
     public bool CanAddAt(IInventoryItem item, Vector2Int point) {
         if (!_provider.CanAddInventoryItem(item) || _provider.isInventoryFull || _AllowAddingitems == false) {
-            //  Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
+              Debug.LogWarning("couldn't add item because inventory is full or items can't be added");
             return false;
         }
 
@@ -255,7 +267,6 @@ public class InventoryManager :  IInventoryManager {
         // Check if item is outside of inventory
         if (!_fullRect.Contains(item.GetMinPoint() + padding) || !_fullRect.Contains(item.GetMaxPoint() - padding)) {
             item.position = previousPoint;
-
             return false;
         }
 
@@ -319,7 +330,7 @@ public class InventoryManager :  IInventoryManager {
             return false;
         }
 
-        try {
+        
             Vector2Int point;
             // Check if item is not already in inventory and we can find a spot for it
             if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
@@ -328,11 +339,7 @@ public class InventoryManager :  IInventoryManager {
 
 
             return false;
-        }
-        catch (Exception e) {
-            Debug.LogWarning(e);
-            return false;
-        }
+        
     }
 
     /// <inheritdoc />
@@ -524,5 +531,15 @@ public class InventoryManager :  IInventoryManager {
      */
     private Vector2Int GetCenterPosition(IInventoryItem item) {
         return new Vector2Int((_size.x - item.width) / 2, (_size.y - item.height) / 2);
+    }
+
+
+    /// <summary>
+    /// Retrieves an inventory item by its runtime ID.
+    /// </summary>
+    /// <param name="runtimeID">The unique runtime ID of the item.</param>
+    /// <returns>The <see cref="IInventoryItem"/> with the specified runtime ID, or null if not found.</returns>
+    public IInventoryItem GetItemByRuntimeID(int runtimeID) {
+        return allItems.FirstOrDefault(x => x.RuntimeID == runtimeID);
     }
 }

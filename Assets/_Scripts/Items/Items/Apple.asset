@@ -18,10 +18,10 @@ MonoBehaviour:
     _height: 1
     _shape: 01
   _name: Apple
-  _type: 4
+  _type: 9
   _tier: 0
-  _Stackable: 1
-  _maxQuantity: 6
+  _Stackable: 0
+  _maxQuantity: 1
   _quantity: 1
   _useDurability: 0
   _Durability: 0

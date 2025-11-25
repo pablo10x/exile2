@@ -1,5 +1,6 @@
 ﻿using Exile.Inventory;
 using Exile.Inventory.Examples;
+using FishNet.Object;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -66,6 +67,7 @@ namespace Exile.Inventory
         }
 
         public int ID => Id;
+        public int RuntimeID { get; set; }
 
         /// <inheritdoc />
         public Sprite sprite
@@ -165,6 +167,7 @@ namespace Exile.Inventory
 
         public bool useDurability => _useDurability;
         public float MaxDurability => Max_Durability;
+        
 
         public float Durability
         {
@@ -175,11 +178,15 @@ namespace Exile.Inventory
         /// <summary>
         /// Creates a copy if this scriptable object
         /// </summary>
-        public IInventoryItem CreateInstance()
+        
+        public IInventoryItem CreateInstance(int runtimeID)
         {
+           
             var clone = Instantiate(this);
+            clone.RuntimeID = runtimeID;
             if (_iscontainer)
             {
+                
                 clone.i_provider = new InventoryProvider(InventoryRenderMode.Layered, -1, ItemType.Any);
                 clone.ContainerInventory =
                     new InventoryManager(clone.i_provider, container_shape.width, container_shape.height, true);

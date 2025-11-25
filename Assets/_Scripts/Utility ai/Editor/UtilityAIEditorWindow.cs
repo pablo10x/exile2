@@ -351,7 +351,7 @@ namespace UtilityAI.Editor
         {
             string folder = GetSelectedFolderOrFallback();
             string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{ObjectNames.NicifyVariableName(t.Name)}.asset");
-            var asset = ScriptableObject.CreateInstance(t);
+            var asset = CreateInstance(t);
             AssetDatabase.CreateAsset(asset, path);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -370,7 +370,7 @@ namespace UtilityAI.Editor
                 {
                     string folder = GetSelectedFolderOrFallback();
                     string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{ObjectNames.NicifyVariableName(t.Name)}.asset");
-                    var asset = ScriptableObject.CreateInstance(t);
+                    var asset = CreateInstance(t);
                     AssetDatabase.CreateAsset(asset, path);
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();

@@ -17,6 +17,7 @@ namespace Exile.Inventory
         
         string ItemName { get; }
         int ID { get; }
+        int RuntimeID { get; set; }
         
         /// <summary>
         /// The sprite of this item
@@ -40,6 +41,7 @@ namespace Exile.Inventory
         int maxQuantity { get; }
         int Quantity { get; set; }
         
+        bool isContainer { get; }
         
         /// <summary>
         /// The height of this item
@@ -69,7 +71,7 @@ namespace Exile.Inventory
         /// <summary>
         /// Creates a copy of this item
         /// </summary>
-        IInventoryItem CreateInstance();
+        IInventoryItem CreateInstance(int runtimeID);
     }
 
     internal static class InventoryItemExtensions
@@ -83,7 +85,7 @@ namespace Exile.Inventory
             return item.position;
         }
 
-        /// <summary>
+        /// <summary>LAGER
         /// Returns the top right corner position of an item 
         /// within its inventory
         /// </summary>
@@ -91,6 +93,7 @@ namespace Exile.Inventory
         {
             return item.position + new Vector2Int(item.width, item.height);
         }
+
 
         /// <summary>
         /// Returns true if this item overlaps the given point within an inventory
