@@ -131,8 +131,7 @@ public class PlayerStatus : MonoBehaviour {
     [BoxGroup("Advanced Stats")]
     [SerializeField, ReadOnly] private TemperatureState tempState = TemperatureState.Normal;
 
-    [BoxGroup("Advanced Stats")]
-    [SerializeField, ReadOnly] private bool isInShock = false;
+    
 
     [BoxGroup("Advanced Stats")]
     [SerializeField, ReadOnly] private bool isBleeding = false;
@@ -142,30 +141,28 @@ public class PlayerStatus : MonoBehaviour {
     #endregion
 
     #region Status Effects
-    [TabGroup("Status", "Infections")]
+    [BoxGroup("Status")]
     [ListDrawerSettings(ShowFoldout = true)]
     [SerializeField] private List<InfectionStatus> activeInfections = new List<InfectionStatus>();
 
-    [TabGroup("Status", "Injuries")]
+    [BoxGroup("Status")]
     [ListDrawerSettings(ShowFoldout = true)]
     [SerializeField] private List<InjuryStatus> activeInjuries = new List<InjuryStatus>();
 
-    [TabGroup("Status", "Effects")]
-    [SerializeField] private bool isBrokenLeg = false;
+   
 
-    [TabGroup("Status", "Effects")]
-    [SerializeField] private bool isBrokenArm = false;
+   
 
-    [TabGroup("Status", "Effects")]
+    [BoxGroup("Effects")]
     [SerializeField] private bool isVomiting = false;
 
-    [TabGroup("Status", "Effects")]
+    [BoxGroup("Effects")]
     [SerializeField] private bool isCoughing = false;
 
-    [TabGroup("Status", "Effects")]
+    [BoxGroup("Effects")]
     [SerializeField] private bool isSneaking = false;
 
-    [TabGroup("Status", "Effects")]
+    [BoxGroup("Effects")]
     [SerializeField] private bool isRunning = false;
     #endregion
 
@@ -496,13 +493,7 @@ public class PlayerStatus : MonoBehaviour {
         // Pain naturally decreases
         pain = Mathf.Max(0, pain - 3f * delta);
 
-        // High shock affects consciousness
-        if (shock > 80f) {
-            isInShock = true;
-        } else {
-            isInShock = false;
-        }
-
+       
         OnPainChanged?.Invoke(pain);
     }
 
@@ -685,10 +676,7 @@ public class PlayerStatus : MonoBehaviour {
         AddPain(severity * 0.5f);
         AddShock(severity * 0.3f);
 
-        if (type == InjuryType.Fracture) {
-            if (bodyPart.ToLower().Contains("leg")) isBrokenLeg = true;
-            if (bodyPart.ToLower().Contains("arm")) isBrokenArm = true;
-        }
+     
 
         OnInjuryAdded?.Invoke(type);
     }
@@ -732,8 +720,8 @@ public class PlayerStatus : MonoBehaviour {
         isBleeding = false;
         isVomiting = false;
         isCoughing = false;
-        isBrokenLeg = false;
-        isBrokenArm = false;
+      
+      
         
         Debug.Log("Player respawned.");
     }

@@ -1,9 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Exile.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
-using log = UnityEngine.Debug;
 
 namespace Exile.Inventory {
     /// <summary>
@@ -88,6 +86,7 @@ namespace Exile.Inventory {
                 if (_image.rectTransform is null) Debug.Log("rect transform is null");
                 if (_image.rectTransform != null) {
                     _image.rectTransform.localPosition = newValue;
+                    
                 }
                 else {
                     Debug.Log($"null rect: image: {_image.transform.name}");
@@ -120,7 +119,7 @@ namespace Exile.Inventory {
             if (currentController != null) {
                 var grid = currentController.ScreenToGrid(pos + _offset + GetDraggedItemOffset(currentController.inventoryRenderer, item));
 
-                // Try to add new item
+                // Try to add a new item
                 if (currentController.inventory.CanAddAt(item, grid)) {
                     currentController.inventory.TryAddAt(item, grid); // Place the item in a new location
                     mode = DropMode.Added;
@@ -201,14 +200,14 @@ namespace Exile.Inventory {
                 currentController.inventoryRenderer.ClearSelection();
             }
             else {
-                originalController.inventory.TryAddAt(item, originPoint); // Return the item to its previous location
-                mode = DropMode.Returned;
+                // originalController.inventory.TryAddAt(item, originPoint); // Return the item to its previous location
+                // mode = DropMode.Returned;
 
-                //     mode = DropMode.Dropped;
-                //     if (!originalController.inventory.TryForceDrop(item)) // Drop the item on the ground
-                //     {
-                //         originalController.inventory.TryAddAt(item, originPoint);
-                //     }
+                mode = DropMode.Dropped;
+                if (!originalController.inventory.TryForceDrop(item)) // Drop the item on the ground
+                {
+                    originalController.inventory.TryAddAt(item, originPoint);
+                }
             }
 
             // Destroy the image representing the item
@@ -228,7 +227,7 @@ namespace Exile.Inventory {
         }
 
         /*
-         * Returns true if its possible to swap
+         * Returns true if it is possible to swap
          */
         private bool CanSwap() {
             if (!currentController.inventory.CanSwap(item)) return false;

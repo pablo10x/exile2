@@ -1,9 +1,6 @@
-﻿using FishNet.Object;
-using FishNet.Object.Synchronizing;
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 using System.Collections.Generic;
-using FishNet.Serializing;
 
 namespace Exile.Inventory.Network {
     /// <summary>
@@ -14,6 +11,7 @@ namespace Exile.Inventory.Network {
         public string ItemName;
         public int ItemId; // The ScriptableObject instance ID or unique identifier
         public int RuntimeID;
+       
         public int Width;
         public int Height;
         public Vector2Int Position;
@@ -28,7 +26,7 @@ namespace Exile.Inventory.Network {
         public bool CanDrop;
         public bool UseDurability;
         public bool IsContainer;
-        
+        public bool iTemPickedup;
         public NetworkedItemData(IInventoryItem item) {
             var itemBase = item as ItemBase;
             
@@ -49,6 +47,7 @@ namespace Exile.Inventory.Network {
             CanDrop = item.canDrop;
             UseDurability = item.useDurability;
             IsContainer = itemBase != null && itemBase.isContainer;
+            iTemPickedup = false;
         }
         
         public void ApplyToItem(IInventoryItem item) {

@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
-using _Scripts.Items;
 using Exile.Inventory;
-using Exile.Inventory.Examples;
-using Exile.Inventory.Network;
 using FishNet.Connection;
 using FishNet.Object;
-using FishNet.Object.Synchronizing;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class ContainerBox : NetworkBehaviour, IInteractable {
@@ -15,14 +11,36 @@ public class ContainerBox : NetworkBehaviour, IInteractable {
     [SerializeField] NetworkInventoryBehaviour _networkInventoryBehaviour;
 
     
+
+    [BoxGroup("Items")] [SerializeField] private List<ItemBase>  _items = new List<ItemBase>();
+    public override void OnStartServer() {
+        base.OnStartServer();
+
+
+   
+        
+    }
     
- 
-
-
-
     
 
  
+    public override void OnStartClient() {
+        base.OnStartClient();
+        int randomNumber = Random.Range(0, 10);
+        for (int i = 0; i < randomNumber; i++) {
+          AddRandomItem();
+            
+        }
+    }
+
+    [Button("Add Random Item")]
+    public void AddRandomItem() {
+        
+        if(!IsServerStarted) return;
+        var randomItemFromList = Random.Range(0, _items.Count);
+        _networkInventoryBehaviour.RequestAddServerRpc(_items[randomItemFromList].ID);
+    }
+  
 
     public string GetInteractionPrompt() {
         return $"Open {ContainerName}";

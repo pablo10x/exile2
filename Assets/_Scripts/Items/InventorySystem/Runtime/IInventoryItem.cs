@@ -18,6 +18,8 @@ namespace Exile.Inventory
         string ItemName { get; }
         int ID { get; }
         int RuntimeID { get; set; }
+
+        ushort CurrentInventoryID { get; set; }
         
         /// <summary>
         /// The sprite of this item

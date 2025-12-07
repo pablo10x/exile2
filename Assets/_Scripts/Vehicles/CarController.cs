@@ -1,18 +1,14 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Animancer;
 using core.Managers;
 using core.player;
 using core.Types;
-using KinematicCharacterController;
 using Sirenix.OdinInspector;
 using UniRx;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
-using Random = UnityEngine.Random;
 
 namespace core.Vehicles {
     [Serializable]
@@ -30,9 +26,9 @@ namespace core.Vehicles {
         }
     }
 
-    [RequireComponent(typeof(RCC_CarControllerV3), typeof(AudioSource))]
+    [RequireComponent(typeof(RCC_CarControllerV4), typeof(AudioSource))]
     public class CarController : Vehicle {
-        [FormerlySerializedAs("controllerV3"),SerializeField] public RCC_CarControllerV3 controllerV4;
+        [FormerlySerializedAs("controllerV3"),SerializeField] public RCC_CarControllerV4 controllerV4;
         [SerializeField] private new Renderer            renderer;
         [SerializeField] internal Collider            VehicleCollider;
 

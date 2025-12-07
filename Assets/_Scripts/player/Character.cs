@@ -3,16 +3,11 @@ using Animancer;
 using core.Managers;
 using core.player;
 using core.Vehicles;
-using FishNet.Component.Spawning;
-using FishNet.Demo.Prediction.CharacterControllers;
-using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
 using FishNet.Utility.Template;
-using GameKit.Dependencies.Utilities;
 using KinematicCharacterController;
 using Sirenix.OdinInspector;
-using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
@@ -79,7 +74,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     #region Prediction Data Structures
 
     [FoldoutGroup("Reconciliation")] public float positionSnapThreshold = 3f; // Snap if error > this
-    [FoldoutGroup("Reconciliation")]  public float ReconsileSmoothTime = 25.5f;
+    [FoldoutGroup("Reconciliation")] public float ReconsileSmoothTime   = 25.5f;
     // Smoothing state
     private Vector3    _reconcilePositionVelocity;
     private float      _reconcileRotationVelocity;
@@ -132,7 +127,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         public void Dispose() { }
     }
 
-    private ReplicateData _lastTickedReplicateData = default;
+    // private ReplicateData _lastTickedReplicateData = default;
 
     /// <summary>
     /// State data that gets sent from server to client for corrections
@@ -187,9 +182,9 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     private Vector3 _moveInputVector;
 
     [FoldoutGroup("Movement/Transitions")] public float movementTransitionSpeed = 8f;
-    private                                       float currentMoveSpeed;
-    private                                       float targetMoveSpeed;
-    private                                       float speedChangeVelocity;
+    //private                                       float currentMoveSpeed;
+    private float targetMoveSpeed;
+    private float speedChangeVelocity;
 
     #endregion
 
@@ -250,16 +245,6 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         SetTickCallbacks(TickCallback.Tick);
     }
 
-    public override void OnStartNetwork() {
-        base.OnStartNetwork();
-
-
-        // Subscribe to Fish-Net's tick events
-        //  TimeManager.OnTick     += TimeManager_OnTick;
-        //TimeManager.OnPostTick += TimeManager_OnPostTick;
-        UiManager.Instance.ShowControllerPage();
-    }
-
     /// <summary>
     /// This replaces Update() for prediction
     /// Called at a fixed rate synchronized between client and server
@@ -316,8 +301,8 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         }
 
         // Always use the tickDelta as your delta when performing actions inside replicate.
-        float delta            = (float)TimeManager.TickDelta;
-       // bool  useDefaultForces = false;
+        float delta = (float)TimeManager.TickDelta;
+        // bool  useDefaultForces = false;
 
         /* When client only run some checks to
          * further predict the clients future movement.
@@ -410,7 +395,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
         // Log the error for debugging. You can adjust the threshold to only log significant deviations.
         if (positionError > 0.5f) {
-           // Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
+            // Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
             if (positionError > positionSnapThreshold) {
                 motor.SetPosition(rd.Position, false);
             }
@@ -418,7 +403,6 @@ public class Character : TickNetworkBehaviour, ICharacterController {
                 Vector3 velocityCorrection = (rd.Position - motor.TransientPosition) / ReconsileSmoothTime;
                 AddVelocity(velocityCorrection);
             }
-
         }
 
         if (rotationError > 20.1f) {
@@ -436,11 +420,8 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         }
     }
 
-    
-
     private void Start() {
-        currentGravity   = initialGravity;
-        currentMoveSpeed = 0f;
+        currentGravity = initialGravity;
     }
 
     private void Update() {
@@ -1086,7 +1067,7 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         if (playerCar != null && playerCar.controllerV4 != null) {
             bool isReversing = playerCar.controllerV4.direction == -1 && playerCar.controllerV4.speed > 5f;
 
-            var newsteer = Mathf.Clamp(playerCar.controllerV4.FrontLeftWheelCollider.wheelCollider.steerAngle, -1, 1);
+            var newsteer = Mathf.Clamp(playerCar.controllerV4.FrontLeftWheelCollider.RotationValue, -1, 1);
             pa.UpdateVehicleSteering_Mixer(newsteer, Steeringsmoothness);
 
             if (isReversing) {
@@ -1150,7 +1131,11 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     public override void OnStartClient() {
         SetupPlayerCharacter();
-        GameManager.Instance.PlayerSpawnedEventDispatcher();
+        if (IsOwner)
+            GameManager.Instance.PlayerSpawnedEventDispatcher();
+        // if (UiManager.Instance != null) {
+        //     UiManager.Instance.ShowControllerPage();
+        // }
     }
 
     public override void OnStopClient() {

@@ -132,14 +132,15 @@ namespace Exile.Inventory {
             }
 
             // Attempt to remove the item from the inventory
-           inventory.TryRemove(_itemToDrag);
+            inventory.TryRemove(_itemToDrag);
 
-         
 
             onItemPickedUp?.Invoke(_itemToDrag);
-            if (networkInventoryBehaviour != null) {
-                networkInventoryBehaviour.cmd_ItemPickedUp(new NetworkedItemData(_itemToDrag));
-            }
+            // if (networkInventoryBehaviour != null) {
+            //     var it = new NetworkedItemData(_itemToDrag) { iTemPickedup = true };
+            //     networkInventoryBehaviour.cmd_ItemPickedUp(it);
+            //  //   networkInventoryBehaviour.cmd_ItemDrop(new NetworkedItemData(_itemToDrag));
+            // }
         }
 
         /*
@@ -178,18 +179,29 @@ namespace Exile.Inventory {
                     onItemAdded?.Invoke(_itemToDrag);
                     if (networkInventoryBehaviour != null) {
                         var it = new NetworkedItemData(_itemToDrag);
+                        if (it.Rotated) {
+                            it.Height = _itemToDrag.width;
+                            it.Width = _itemToDrag.height;
+                        }
+                        
+                     
+                       
+                        
                         // here we check if we moving to another position or we adding entiry new item
                         if (inventory.GetItemByRuntimeID(_itemToDrag.RuntimeID) != null) {
+                            // Debug.Log($"EVENT: MOVE item {it.ItemName} | ID: {it.RuntimeID} | InventoryID: {inventory.NetworkInventoryId}");
                             //same item id exist , so we moving it 
                             networkInventoryBehaviour.cmd_ItemMove(it);
-                            Debug.Log($"moving item {it.ItemName}");
+                           
                         }
                         else {
-                           //item with that runtime id dosent exist here so we request to add it
-                            Debug.Log($"addingg item {it.ItemName}");
-                           networkInventoryBehaviour.cmd_ItemAdd(it);
+
+                            
+                            //item with that runtime id dosent exist here so we request to add it
+                             Debug.Log($"EVENT: ADD item {it.ItemName} | ID: {it.RuntimeID} | InventoryID: {inventory.NetworkInventoryId}");
+                            networkInventoryBehaviour.cmd_ItemAdd(it);
                         }
-                    }
+                    }else Debug.Log("no inventory syncer");
 
                     break;
                 case InventoryDraggedItem.DropMode.Swapped:
@@ -201,8 +213,8 @@ namespace Exile.Inventory {
                 case InventoryDraggedItem.DropMode.Dropped:
                     onItemDropped?.Invoke(_itemToDrag);
                     if (networkInventoryBehaviour != null) {
-                        
-                        
+                        var it = new NetworkedItemData(_itemToDrag);
+                        networkInventoryBehaviour.cmd_ItemDrop(it);
                     }
 
                     ClearHoveredItem();
@@ -312,7 +324,7 @@ namespace Exile.Inventory {
                     inventoryRenderer.RefreshItem(itemToSplit);
                     // Notify network
                     // if (InventoryNetworkUpdater.Instance != null && inventory.IsNetworkRegistered) {
-                    //     InventoryNetworkUpdater.Instance.NotifyItemSplit(inventory.networkInventoryId, itemToSplit, newItem);
+                    //     InventoryNetworkUpdater.Instance.NotifyItemSplit(inventory.NetworkInventoryId, itemToSplit, newItem);
                     // }
 
                     // Fire the item splitted event
@@ -391,39 +403,61 @@ namespace Exile.Inventory {
             }
             else {
                 //check if user clicked item rotate
-                if (Input.GetKeyDown(KeyCode.Space)) {
-                    if (!_draggedItem.item.Rotated) {
-                        var h = _draggedItem.item.height;
-                        var w = _draggedItem.item.width;
-                        _draggedItem.item.height                        = w;
-                        _draggedItem.item.width                         = h;
-                        _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
-                        _draggedItem.item.Rotated                       = true;
+                HandleRotateInputForDraggedItem();
 
+                // if(_draggedItem.item.Rotated)
+                //  _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
+                // else _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
 
-                       
-                        
-                    }
-                    else {
-                        var h = _draggedItem.item.width;
-                        var w = _draggedItem.item.height;
-                        _draggedItem.item.height                        = h;
-                        _draggedItem.item.width                         = w;
-                        _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
-                        _draggedItem.item.Rotated                       = false;
-                    }
-
-                    if (networkInventoryBehaviour != null) {
-                       // networkInventoryBehaviour.cmd_ItemRotated(new NetworkedItemData(_itemToDrag));
-                    }
-                    // if(_draggedItem.item.Rotated)
-                    //  _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
-                    // else _draggedItem._image.rectTransform.localRotation = Quaternion.Euler(0, 0, 0f);
-                }
 
                 // Update position while dragging
                 //_draggedItem.position = _currentEventData.position;
             }
+        }
+
+        /// <summary>
+        /// Checks input and rotates the currently dragged item if Space is pressed.
+        /// </summary>
+        private void HandleRotateInputForDraggedItem() {
+            if (_draggedItem == null) return;
+
+            if (!Input.GetKeyDown(KeyCode.Space))
+                return;
+
+            RotateDraggedItem();
+
+            if (networkInventoryBehaviour != null) {
+                // Send updated rotation + size to server.
+                // Using _draggedItem.item instead of _itemToDrag because _itemToDrag
+                // may be null or refer to old state while dragging.
+                var netData = new NetworkedItemData(_draggedItem.item);
+               // networkInventoryBehaviour.cmd_ItemRotated(netData);
+            }
+        } 
+
+        /// <summary>
+        /// Toggles the rotated state of the dragged item and updates its size/rotation.
+        /// </summary>
+        private void RotateDraggedItem() {
+            var item = _draggedItem.item;
+
+            // Swap width and height in the item data
+            (item.width, item.height) = (item.height, item.width);
+
+            // Toggle rotated flag
+            item.Rotated = !item.Rotated;
+
+            // Update the UI rotation
+            _draggedItem._image.rectTransform.localRotation = item.Rotated
+                                                                  ? Quaternion.Euler(0, 0, -90f)
+                                                                  : Quaternion.Euler(0, 0, 0f);
+
+            // Optionally, adjust the rect size if needed based on cell size
+            // (similar logic to what you do in OnBeginDrag)
+            var   cellSize   = inventoryRenderer.cellSize;
+            float itemWidth  = item.width * cellSize.x / 1.8f;
+            float itemHeight = item.height * cellSize.y;
+            _draggedItem._image.rectTransform.sizeDelta = new Vector2(itemWidth, itemHeight);
         }
 
         /*

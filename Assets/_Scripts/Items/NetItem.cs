@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Exile.Inventory.Network;
-using FishNet.Object.Synchronizing;
+
 namespace _Scripts.Items {
 
     [Serializable]

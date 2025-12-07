@@ -1,14 +1,8 @@
 ﻿﻿using System;
-using System.Collections.Generic;
-using _Scripts.Items;
-using core.player;
-using Exile.Inventory;
-using Exile.Inventory.Examples;
-using Exile.Inventory.Network;
-using Sirenix.OdinInspector;
+ using Exile.Inventory.Examples;
+ using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Exile.Inventory {
@@ -40,8 +34,7 @@ namespace Exile.Inventory {
         [FoldoutGroup("Grid Settings")] [SerializeField]                                                     private bool          RespectPanelWidth        = false;
         [FoldoutGroup("Grid Settings")]                                                                      public  RectTransform PanelRect;
 
-        [BoxGroup("Debug")] [FoldoutGroup("Debug/Test")] public bool           test_AutoCreate = true;
-        [FoldoutGroup("Debug/Test")]                     public List<ItemBase> items           = new List<ItemBase>();
+    
 
         internal bool isActive = false;
 
@@ -70,7 +63,7 @@ namespace Exile.Inventory {
             return null;
         }
 
-        public InventoryManager CreateInventoryView(InventoryManager _inventoryManager, IInventoryItem item, InventoryRenderMode _render, ItemType _alloweditems = ItemType.Any) {
+        public InventoryManager CreateInventoryView(InventoryManager _inventoryManager, IInventoryItem fromitem, InventoryRenderMode _render, ItemType _alloweditems = ItemType.Any) {
             _iv_render = GetComponentInChildren<InventoryRenderer>();
             if (_iv_render == null) {
                 _iv_render = GetComponent<InventoryRenderer>();
@@ -83,10 +76,10 @@ namespace Exile.Inventory {
 
             // If we are opening a container, the _inventoryManager is passed directly.
             // We can get the name and size from it.
-            if (item != null) {
-                inventoryViewTMp_Name.text = item.ItemName;
+            if (fromitem != null) {
+                inventoryViewTMp_Name.text = fromitem.ItemName;
                 itemImage.enabled          = true;
-                itemImage.sprite           = item.sprite;
+                itemImage.sprite           = fromitem.sprite;
             } else if (_inventoryManager != null) {
                 inventoryViewTMp_Name.text = _inventoryManager.inventoryName;
             }
@@ -151,6 +144,7 @@ namespace Exile.Inventory {
                                              _alloweditems);
             
             InventoryManager = _inventoryManager; // Assign the manager passed in.
+            if(_inventoryManager is null) Debug.Log("inventory is null");
             _iv_render.SetInventory(_inventoryManager, _render);
 
             if (iconPlaceHolder != null) {
@@ -221,6 +215,9 @@ namespace Exile.Inventory {
             gameObject.SetActive(false);
         }
 
-      
+        // private void OnDisable() {
+        //
+        //     Debug.Log($"disabled");
+        // }
     }
 }

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using core.Managers;
 using DG.Tweening;
-using FishNet.Object.Prediction;
 using Sirenix.OdinInspector;
 using UI_;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
 using UnityEngine.Serialization;
 
 public enum CameraState {
@@ -28,7 +24,7 @@ public class CharacterCam : MonoBehaviour {
 
     [BoxGroup("General")] public CameraState cameraState;
     [BoxGroup("General")] public GameObject  camTarget;
-    [SerializeField] private float smoothSpeed = 8f; // How fast to interpolate
+   // [SerializeField] private float smoothSpeed = 8f; // How fast to interpolate
     private Vector3 desiredLocalPosition;
     private Vector3 velocity = Vector3.zero;
     [Space]

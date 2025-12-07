@@ -1,6 +1,5 @@
 ﻿using core.player;
 using Salvage.ClothingCuller.Components;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Exile.Inventory.Examples {

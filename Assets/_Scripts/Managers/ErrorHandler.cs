@@ -17,7 +17,7 @@ public class ErrorHandler : MonoBehaviour
     [SerializeField] private CanvasGroupToggler uiPage;
     [SerializeField] private AudioSource errorSound;
 
-    private bool _isErrorShown;
+    //private bool _isErrorShown;
     private Action _submitButtonCallback;
 
     private void Awake()
@@ -39,7 +39,7 @@ public class ErrorHandler : MonoBehaviour
         closeButton.gameObject.SetActive(options.CanCloseError);
         _submitButtonCallback = options.SubmitButtonCallback;
 
-        _isErrorShown = true;
+       // _isErrorShown = true;
     }
 
     public async Task SetErrorAsync(ErrorOptions options)
@@ -66,14 +66,14 @@ public class ErrorHandler : MonoBehaviour
             });
             await tcs.Task;
         }
-        _isErrorShown = true;
+       // _isErrorShown = true;
     }
 
     public void HideError()
     {
         errorTitleText.text = "ERROR";
         errorDescriptionText.text = "...";
-        _isErrorShown = false;
+       // _isErrorShown = false;
         uiPage.Disable();
     }
 

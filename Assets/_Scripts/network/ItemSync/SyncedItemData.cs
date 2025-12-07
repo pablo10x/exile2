@@ -1,7 +1,6 @@
 ﻿// SyncedItemData.cs
 
 using System;
-using UnityEngine;
 
 [Serializable]
 public struct SyncedItemData : IEquatable<SyncedItemData> {

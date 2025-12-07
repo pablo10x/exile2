@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 using Exile.Inventory;
-using Exile.Inventory.Network;
-using FishNet.Object;
 using UnityEngine;
 
 public class InventoryManager :  IInventoryManager {
@@ -10,7 +8,7 @@ public class InventoryManager :  IInventoryManager {
     private IInventoryProvider _provider;
 
 // Add this property to store the network ID
-    public int networkInventoryId { get; set; } = -1;
+    public int NetworkInventoryId { get; private set; }
 
     public NetworkInventoryBehaviour NetworkInventoryBehaviour;
     public string inventoryName { get; set; } = "DefaultInventory";
@@ -19,15 +17,15 @@ public class InventoryManager :  IInventoryManager {
     [SerializeField] private bool _AllowAddingitems = true;
     private                  Rect _fullRect;
 
-    public InventoryManager(IInventoryProvider provider, int width, int height, bool allowadditems = true, string name = "", NetworkInventoryBehaviour _networkInventoryBehaviour = null) {
+    public InventoryManager(int networkInventoryId, IInventoryProvider provider, int width, int height, bool allowadditems = true, string name = "", NetworkInventoryBehaviour _networkInventoryBehaviour = null) {
         _provider         = provider;
         _AllowAddingitems = allowadditems;
-
+        NetworkInventoryId = networkInventoryId;
         NetworkInventoryBehaviour = _networkInventoryBehaviour;
         inventoryName = name ?? inventoryName;
         Rebuild();
         Resize(width, height);
-        // Register with network - ID is automatically stored in inventory.networkInventoryId
+        // Register with network - ID is automatically stored in inventory.NetworkInventoryId
     }
 
     /// <inheritdoc />
@@ -285,7 +283,7 @@ public class InventoryManager :  IInventoryManager {
     /// <inheritdoc />
     public bool TryAddAt(IInventoryItem item, Vector2Int point) {
         if (!CanAddAt(item, point)) {
-            Debug.LogWarning("Couldn't add because function [canadd-at] returned false");
+            //Debug.LogWarning("Couldn't add because function [canadd-at] returned false");
             onItemAddedFailed?.Invoke(item);
             return false;
         }
@@ -334,7 +332,9 @@ public class InventoryManager :  IInventoryManager {
             Vector2Int point;
             // Check if item is not already in inventory and we can find a spot for it
             if (!Contains(item) && GetFirstPointThatFitsItem(item, out point)) {
-                return CanAddAt(item, point); // FIXED: Return the result of CanAddAt
+                bool canadd =  CanAddAt(item, point); // FIXED: Return the result of CanAddAt
+                if(!canadd) Debug.Log("can add is false here");
+                return canadd;
             }
 
 
@@ -345,7 +345,7 @@ public class InventoryManager :  IInventoryManager {
     /// <inheritdoc />
     public bool TryAdd(IInventoryItem item) {
         if (!CanAdd(item)) {
-            //  Debug.LogWarning("Couldn't add because function [canadd] returned false");
+              Debug.LogWarning("Couldn't add because function [canadd] returned false");
             return false;
         }
 

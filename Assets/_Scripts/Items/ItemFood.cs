@@ -1,5 +1,4 @@
 using Exile.Inventory;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "FoodItem", menuName = "Inventory/Food item", order = 2)]

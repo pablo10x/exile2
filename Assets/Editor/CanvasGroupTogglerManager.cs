@@ -56,8 +56,12 @@ namespace core.ui {
         }
         
         private void RefreshTogglers() {
-            var allTogglers = FindObjectsOfType<CanvasGroupToggler>();
-            
+            // Get all togglers in the scene, including inactive ones
+            var allTogglers = FindObjectsByType<CanvasGroupToggler>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
             // Find root togglers (those without a toggler parent)
             rootTogglers = allTogglers
                 .Where(t => !HasTogglerParent(t))
@@ -100,10 +104,12 @@ namespace core.ui {
             }
             return children;
         }
-        
+
         private int CountAllTogglers() {
-            return FindObjectsOfType<CanvasGroupToggler>().Length;
+            return FindObjectsByType<CanvasGroupToggler>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Length;
         }
+
         
         private void OnGUI() {
             InitializeStyles();
@@ -120,16 +126,16 @@ namespace core.ui {
             }
             
             if (GUILayout.Button("Enable All", GUILayout.Height(24))) {
-                foreach (var toggler in FindObjectsOfType<CanvasGroupToggler>()) {
-                    toggler.Enable();
-                }
-            }
-            
-            if (GUILayout.Button("Disable All", GUILayout.Height(24))) {
-                foreach (var toggler in FindObjectsOfType<CanvasGroupToggler>()) {
+                var togglers = FindObjectsByType<CanvasGroupToggler>(
+                    FindObjectsInactive.Exclude,   // or Include if you want inactive as well
+                    FindObjectsSortMode.None
+                );
+
+                foreach (var toggler in togglers) {
                     toggler.Disable();
                 }
             }
+
             
             EditorGUILayout.EndHorizontal();
             

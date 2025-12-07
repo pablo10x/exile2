@@ -974,7 +974,13 @@ public class ResourceChecker : EditorWindow {
 			return (T[])meshfilters.ToArray ();
 		}
 		else
-			return (T[])FindObjectsOfType(typeof(T));
+            return FindObjectsByType(
+               typeof(T),
+               FindObjectsInactive.Exclude,   // or Include if you want inactive too
+               FindObjectsSortMode.None
+           )
+           .Cast<T>()
+           .ToArray();
 	}
 
 	private TextureDetails GetTextureDetail(Texture tTexture, Material tMaterial, MaterialDetails tMaterialDetails)

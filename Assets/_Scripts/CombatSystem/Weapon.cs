@@ -1,5 +1,4 @@
 ﻿using Exile.Inventory;
-using Exile.Inventory.Examples;
 using UnityEngine;
 
 namespace core.player {

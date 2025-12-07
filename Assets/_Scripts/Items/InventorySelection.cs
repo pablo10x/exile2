@@ -1,5 +1,4 @@
-﻿using Exile.Inventory;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Exile.Inventory.Examples

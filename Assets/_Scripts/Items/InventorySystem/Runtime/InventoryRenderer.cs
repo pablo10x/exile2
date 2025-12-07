@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using core.Managers;
-using DG.Tweening;
-using Exile.Inventory;
 using Exile.Shared;
 using Sirenix.OdinInspector;
 using TMPro;

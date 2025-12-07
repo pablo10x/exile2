@@ -1,8 +1,5 @@
-﻿using Exile.Inventory;
-using Exile.Inventory.Examples;
-using FishNet.Object;
+﻿using Exile.Inventory.Examples;
 using Sirenix.OdinInspector;
-using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Exile.Inventory
@@ -68,6 +65,7 @@ namespace Exile.Inventory
 
         public int ID => Id;
         public int RuntimeID { get; set; }
+        public ushort CurrentInventoryID { get; set; }
 
         /// <inheritdoc />
         public Sprite sprite
@@ -188,11 +186,14 @@ namespace Exile.Inventory
             {
                 
                 clone.i_provider = new InventoryProvider(InventoryRenderMode.Layered, -1, ItemType.Any);
-                clone.ContainerInventory =
-                    new InventoryManager(clone.i_provider, container_shape.width, container_shape.height, true);
+                // clone.ContainerInventory =
+                //     new InventoryManager(clone.i_provider, container_shape.width, container_shape.height, true);
             }
 
             clone.name = clone.name.Substring(0, clone.name.Length - 7); // Remove (Clone) from name
+            
+            
+            
             return clone;
         }
     }

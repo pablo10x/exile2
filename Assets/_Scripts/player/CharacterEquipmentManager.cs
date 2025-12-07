@@ -1,10 +1,6 @@
-﻿using System.Collections.Generic;
-using Exile.Inventory;
-using Exile.Inventory.Examples;
+﻿using Exile.Inventory.Examples;
 using FishNet.Object;
-using FishNet.Object.Synchronizing;
 using Salvage.ClothingCuller.Components;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace core.player {

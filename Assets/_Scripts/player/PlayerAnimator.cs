@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Animancer;
-using core.Managers;
 using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;

@@ -1,5 +1,4 @@
-﻿using System;
-using Animancer;
+﻿using Animancer;
 using FishNet.Object;
 using JetBrains.Annotations;
 using UniRx;

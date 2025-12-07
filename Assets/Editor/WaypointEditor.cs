@@ -13,7 +13,7 @@ public class WaypointEditor : EditorWindow {
     private int          draggingWaypointIndex   = -1;
     private WaypointType currentWaypointType     = WaypointType.npcPath;
     private string       currentRoadName         = "";
-    private int          connectingWaypointIndex = -1;
+   // private int          connectingWaypointIndex = -1;
     private bool         autoConnect             = false;
 
     private bool isConnectingWaypoints = false;

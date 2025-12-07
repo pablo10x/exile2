@@ -1,6 +1,7 @@
 using core.player;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
+using Exile.Inventory.Network;
 using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -10,13 +11,75 @@ public class PlayerInventory : NetworkBehaviour {
 
     public ItemDatabase itemDatabase;
 
-    [BoxGroup("Debuging")] public ItemBase itemToEquip;
+    public                        NetworkInventoryBehaviour BodyInventory;
+    [BoxGroup("Debuging")] public ItemBase                  itemToEquip;
 
     private void Awake() { }
 
-    public override void OnStartClient() {
-       // Debug.Log($"initializing inventory for player | owner: {IsOwner} | is server: {IsServerInitialized}");
+    public override void OnStartServer() {
+        base.OnStartServer();
+
+        // Server side: only handle server logic here.
+        // // Do NOT touch InventoryUIManager (client-only) here.
+        // BodyInventory.OnInventoryInitialized += () => {
+        //     Debug.Log($"[SERVER] Body Inventory Initialized {BodyInventory.Inventory.height} | {BodyInventory.Inventory.width}");
+        //     // If you need to notify the owner client when the server inventory is ready,
+        //     // call a TargetRpc from here (see below).
+        //     if (Owner.IsValid) {
+        //         var itemsdata = BodyInventory.ConvertItemsToNetworkItems();
+        //         var inv       = new NetWorkedInventoryData(BodyInventory.Inventory.NetworkInventoryId, BodyInventory.Inventory.height, BodyInventory.Inventory.width, itemsdata);
+        //         
+        //         
+        //         
+        //         //Target_InventoryInitialized(base.Owner, inv);
+        //     }
+        // };
     }
+
+    
+    
+
+    public override void OnStartClient() {
+        base.OnStartClient();
+// Only build UI for the local player
+        if (!IsOwner) return;
+        if (BodyInventory == null) {
+            Debug.LogWarning("[CLIENT] PlayerInventory: BodyInventory reference is null.");
+            return;
+        }
+
+        // Subscribe to client-side inventory initialized event
+        BodyInventory.OnInventoryInitialized += HandleBodyInventoryInitializedClient;
+
+        // Client side: if this is the local player, you can also build UI here
+        // if inventory is already initialized, OR wait for the TargetRpc above.
+        // For now, logic is pushed to Target_InventoryInitialized.
+
+    }
+
+// Runs on client, for the local player, when BodyInventory.Inventory is ready.
+    private void HandleBodyInventoryInitializedClient() {
+        if (!IsOwner) return; // safety
+
+        var invManager = BodyInventory.Inventory;
+        if (invManager == null) {
+            Debug.LogWarning("[CLIENT] BodyInventory.Inventory is null in HandleBodyInventoryInitializedClient.");
+            return;
+        }
+
+        Debug.Log($"[CLIENT] Body Inventory Initialized {invManager.height} | {invManager.width}, building UI.");
+
+        // Option 1: build using NetworkedItemData snapshot
+        var itemsdata = BodyInventory.ConvertItemsToNetworkItems();
+        var invData   = new NetWorkedInventoryData(invManager.NetworkInventoryId, invManager.height, invManager.width, itemsdata);
+        InventoryUIManager.Instance.addBaseCharacterInventory(BodyInventory.Inventory,invData);
+
+        // OR Option 2: if your UI can work directly with InventoryManager:
+        // InventoryUIManager.Instance.AddBaseCharacterInventory(invManager);
+    }
+
+   
+
 
     [Button("Test equip ")]
     public void TestEquip() {
@@ -34,8 +97,8 @@ public class PlayerInventory : NetworkBehaviour {
         switch (item.Type) {
             case ItemType.ClothingPants:
                 bool result = InventoryUIManager.Instance.Pants.InventoryManager.TryAdd(item);
-                
-                
+
+
                 break;
         }
     }

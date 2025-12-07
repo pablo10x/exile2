@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace UtilityAI
+﻿namespace UtilityAI
 {
     /// <summary>
     /// An action that an AI agent can perform. Returns a score in [0,1].

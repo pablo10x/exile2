@@ -1,5 +1,4 @@
-﻿using core.Managers;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace UI_

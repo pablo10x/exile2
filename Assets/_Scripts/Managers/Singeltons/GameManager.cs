@@ -1,6 +1,5 @@
 using System;
 using _Scripts.Managers.Singeltons;
-using core.player;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;

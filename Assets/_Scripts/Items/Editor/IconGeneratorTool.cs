@@ -48,7 +48,7 @@ public class IconGeneratorTool : EditorWindow {
     private Light         fillLight;
     private RenderTexture renderTexture;
     private Vector2       scrollPosition;
-    private bool          showAdvancedSettings = false;
+    //private bool          showAdvancedSettings = false;
     private Texture2D     previewTexture;
 
     #endregion

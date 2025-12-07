@@ -1,12 +1,8 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using _Scripts.Items;
 using core.Managers;
 using core.ui;
 using Exile.Inventory;
-using Exile.Inventory.Examples;
 using Exile.Inventory.Network;
 using LeTai.Asset.TranslucentImage;
 using Sirenix.OdinInspector;
@@ -29,6 +25,11 @@ public class InventoryUIManager : Singleton<InventoryUIManager> {
     [FoldoutGroup("Equipments slots")] public InventoryView Backpack;
     [FoldoutGroup("Equipments slots")] public InventoryView Shoes;
 
+
+    [BoxGroup("Player related")] public InventoryView BodyView;
+    
+    
+    
     private Dictionary<GameObject, InventoryView> _inventoryViews = new Dictionary<GameObject, InventoryView>();
 
     [FoldoutGroup("InventoryRenderingConfigs")] [SerializeField] private TranslucentImage _translucentImage;
@@ -60,8 +61,21 @@ public class InventoryUIManager : Singleton<InventoryUIManager> {
         }
     }
 
+    public void addBaseCharacterInventory(InventoryManager inventoryManager, NetWorkedInventoryData inv) {
+        InventoryView view = BodyView;
+
+     
+        view._renderMode      = InventoryRenderMode.Grid;
+        view.InventoryManager = inventoryManager;//new InventoryManager(new InventoryProvider(), inv.InventoryWidth, inv.InventoryHeight, true, "MainBody Inv");
+        view.CreateInventoryView(view.InventoryManager,null,InventoryRenderMode.Grid,ItemType.Any);
+        view.gameObject.SetActive(true);
+        view.inventoryViewTMp_Name.text = "Body ";
+        view.isActive = true;
+       
+    }
+    
     public void AssignItemToPlayerTab(ItemBase item) {
-        if (item._iscontainer == false) return;
+        if (!item.isContainer) return;
         InventoryView view = GetFreeTab();
         if (view == null) return;
 

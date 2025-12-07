@@ -1,6 +1,4 @@
-﻿using System;
-using Exile.Inventory;
-using FishNet.Object;
+﻿using FishNet.Object;
 using UnityEngine;
 using Sirenix.OdinInspector;
 
