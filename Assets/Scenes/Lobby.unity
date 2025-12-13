@@ -769,18 +769,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 124079872}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &124079874 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7063784277117360632, guid: 5a173b0934f524f4884961e914842ed6,
-    type: 3}
-  m_PrefabInstance: {fileID: 124079872}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a0e8dfc006fad74ca6ac59b2c589e4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &132237303
 GameObject:
   m_ObjectHideFlags: 0
@@ -1366,6 +1354,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1983,12 +1972,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 421239067}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &421239069 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8816540448675338801, guid: b3ef79cb594388040b5d887e2b756e02,
-    type: 3}
-  m_PrefabInstance: {fileID: 421239067}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &438816137
 GameObject:
   m_ObjectHideFlags: 0
@@ -2075,7 +2058,6 @@ GameObject:
   - component: {fileID: 492801064}
   - component: {fileID: 492801066}
   - component: {fileID: 492801065}
-  - component: {fileID: 492801067}
   - component: {fileID: 492801069}
   - component: {fileID: 492801068}
   m_Layer: 5
@@ -2144,27 +2126,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 492801063}
   m_CullTransparentMesh: 1
---- !u!114 &492801067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 492801063}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f5c66278f38aa3489780b3622b223d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  searchButton: {fileID: 983720806}
-  idInput: {fileID: 1995049639}
-  container: {fileID: 1489268684}
-  profilePicture: {fileID: 124079874}
-  username: {fileID: 1978934079}
-  inNotificationText: {fileID: 530144229}
-  inNotificationBox: {fileID: 620986130}
-  addButton: {fileID: 1209100500268376683}
-  spinner: {fileID: 247238380}
 --- !u!114 &492801068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2286,6 +2247,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2423,6 +2385,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2662,7 +2625,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 1398810131}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: _Scripts.ui.Chatbox, Assembly-CSharp
         m_MethodName: clearchat
         m_Mode: 1
@@ -3274,6 +3237,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -3538,6 +3502,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4212,6 +4177,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4335,14 +4301,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Version: 1
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
-  m_LightLayerMask: 1
   m_CustomShadowLayers: 0
-  m_ShadowLayerMask: 1
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 1
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!108 &825777814
 Light:
   m_ObjectHideFlags: 0
@@ -4351,14 +4326,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825777812}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 0
     m_Resolution: -1
@@ -4572,7 +4547,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 836873188}
-  - component: {fileID: 836873189}
   m_Layer: 0
   m_Name: LobbyManager
   m_TagString: Untagged
@@ -4595,36 +4569,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &836873189
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 836873187}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 207835b7cda6d404b82e307cbcc9d003, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerName: {fileID: 1323552993}
-  cash: {fileID: 937775306}
-  onlineUsersText: {fileID: 2121181661}
-  vipBadge: {fileID: 1170887005}
-  canvasHome: {fileID: 2078046934}
-  canvasFriends: {fileID: 747531957}
-  requestsImage: {fileID: 1097171006}
-  requestsCount: {fileID: 823851842}
-  containerFriendRequests: {fileID: 84380207}
-  containerFriendtabs: {fileID: 2134041286}
-  friendRequestPrefab: {fileID: 2988098853137315764, guid: 95d9348f83958cd45a301e80392745fa,
-    type: 3}
-  friendtabPrefab: {fileID: 4878977019617085938, guid: 8e3527aaf85b40d4c847fed14e0ea1ec,
-    type: 3}
-  friendsearchBox: {fileID: 492801068}
-  chatbox: {fileID: 1398810131}
-  disabled_color: {r: 0.6431373, g: 0.6431373, b: 0.6431373, a: 0.3019608}
-  notification_color: {r: 1, g: 0.79607844, b: 0.14901961, a: 0.80784315}
 --- !u!1 &840282052
 GameObject:
   m_ObjectHideFlags: 0
@@ -5145,6 +5089,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -6392,6 +6337,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -6906,6 +6852,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -7282,18 +7229,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 1379728382}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1379728384 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7063784277117360632, guid: 5a173b0934f524f4884961e914842ed6,
-    type: 3}
-  m_PrefabInstance: {fileID: 1379728382}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a0e8dfc006fad74ca6ac59b2c589e4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1384534711
 GameObject:
   m_ObjectHideFlags: 0
@@ -7380,7 +7315,6 @@ GameObject:
   - component: {fileID: 1398810134}
   - component: {fileID: 1398810133}
   - component: {fileID: 1398810132}
-  - component: {fileID: 1398810131}
   m_Layer: 5
   m_Name: Chat box
   m_TagString: Untagged
@@ -7411,30 +7345,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0.00012207, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1398810131
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1398810129}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21d5593a2cede134a8af1a956fad06b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _username: {fileID: 1453400984}
-  _inputField: {fileID: 1792910455}
-  _profilePicture: {fileID: 1379728384}
-  _sendButton: {fileID: 956808442}
-  canvasGroupToggler: {fileID: 1398810132}
-  _chat_other_prefab: {fileID: 3769178543364240479, guid: b53a485fa8b6f174381e19126680ad66,
-    type: 3}
-  _chat_player_prefab: {fileID: 7013455241945886932, guid: f460e50e1bd373a458cf0cd641e1436b,
-    type: 3}
-  chat_container: {fileID: 1830644561}
-  loadingIcon: {fileID: 421239069}
-  midText: {fileID: 1931774783}
 --- !u!114 &1398810132
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7700,6 +7610,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -8092,6 +8003,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -8229,6 +8141,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -8915,6 +8828,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -9005,8 +8919,19 @@ MonoBehaviour:
   m_Dithering: 0
   m_ClearDepth: 1
   m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
   m_Version: 2
 --- !u!81 &1786227264
 AudioListener:
@@ -10210,6 +10135,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -10347,6 +10273,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -10832,6 +10759,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -11043,6 +10971,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -11180,6 +11109,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

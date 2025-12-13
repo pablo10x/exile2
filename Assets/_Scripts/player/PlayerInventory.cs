@@ -51,10 +51,11 @@ public class PlayerInventory : NetworkBehaviour {
         // Subscribe to client-side inventory initialized event
         BodyInventory.OnInventoryInitialized += HandleBodyInventoryInitializedClient;
 
-        // Client side: if this is the local player, you can also build UI here
-        // if inventory is already initialized, OR wait for the TargetRpc above.
-        // For now, logic is pushed to Target_InventoryInitialized.
-
+        // If the inventory is ALREADY initialized (e.g. we are Host, or Client joined late and init happened before this Start),
+        // we manually trigger the handler because we might have missed the event or it won't fire again.
+        if (BodyInventory.Inventory != null) {
+            HandleBodyInventoryInitializedClient();
+        }
     }
 
 // Runs on client, for the local player, when BodyInventory.Inventory is ready.

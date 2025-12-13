@@ -331,6 +331,18 @@ namespace Exile.Inventory {
         Clears and renders all items
         */
         private void ReRenderAllItems() {
+            // Clear grid state first
+            if (_grids != null) {
+                foreach (var gridImage in _grids) {
+                    if (gridImage.sprite == _cellSpriteUsed) {
+                        gridImage.sprite = _cellSpriteEmpty;
+                    }
+                }
+            }
+
+            // Clear all item overlays
+            ClearAllItemInfoOverlays();
+
             // Clear all items
             foreach (var image in _items.Values) {
                 image.gameObject.SetActive(false);
@@ -742,7 +754,7 @@ namespace Exile.Inventory {
             }
 
 
-            ReRenderAllItems();
+          //  ReRenderAllItems();
         }
 
         /*

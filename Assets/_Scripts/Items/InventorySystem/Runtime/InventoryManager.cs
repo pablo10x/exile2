@@ -288,24 +288,33 @@ public class InventoryManager :  IInventoryManager {
             return false;
         }
 
-        if (!_provider.AddInventoryItem(item)) {
-            onItemAddedFailed?.Invoke(item);
-            return false;
-        }
-
+        // Capture previous state in case we need to rollback
+        var previousPosition = item.position;
+        
+        // Optimistically set the position based on render mode logic
+        // This is done BEFORE provider.Add so the provider sees the final position
         switch (_provider.inventoryRenderMode) {
             case InventoryRenderMode.Single:
                 item.position = GetCenterPosition(item);
                 break;
             case InventoryRenderMode.Grid:
-                item.position = point;
-                break;
             case InventoryRenderMode.Layered:
                 item.position = point;
                 break;
             default:
-                throw new NotImplementedException($"InventoryRenderMode.{_provider.inventoryRenderMode.ToString()} have not yet been implemented");
+                 item.position = point; // Default fallback
+                 break;
         }
+
+        if (!_provider.AddInventoryItem(item)) {
+            // Rollback
+            item.position = previousPosition;
+            onItemAddedFailed?.Invoke(item);
+            return false;
+        }
+
+        // NOTE: The switch statement for setting position used to be here.
+        // It has been moved up to ensure the provider captures the correct state.
 
         Rebuild(true);
        

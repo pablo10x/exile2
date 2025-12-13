@@ -52,6 +52,9 @@ namespace Exile.Inventory {
 
         internal NetworkInventoryBehaviour networkInventoryBehaviour => (NetworkInventoryBehaviour)inventory.NetworkInventoryBehaviour;
 
+        private int                       _currentDragItemId;
+        private NetworkInventoryBehaviour _currentDragSource;
+
         private IInventoryItem   _itemToDrag;
         private PointerEventData _currentEventData;
         private IInventoryItem   _lastHoveredItem;
@@ -181,27 +184,28 @@ namespace Exile.Inventory {
                         var it = new NetworkedItemData(_itemToDrag);
                         if (it.Rotated) {
                             it.Height = _itemToDrag.width;
-                            it.Width = _itemToDrag.height;
+                            it.Width  = _itemToDrag.height;
                         }
-                        
-                     
-                       
-                        
+
+
+                        var cur    = _draggedItem.currentController.networkInventoryBehaviour.Inventory.NetworkInventoryId;
+                        var origin = _draggedItem.originalController.networkInventoryBehaviour.Inventory.NetworkInventoryId;
+
+
                         // here we check if we moving to another position or we adding entiry new item
-                        if (inventory.GetItemByRuntimeID(_itemToDrag.RuntimeID) != null) {
-                            // Debug.Log($"EVENT: MOVE item {it.ItemName} | ID: {it.RuntimeID} | InventoryID: {inventory.NetworkInventoryId}");
+                        if (cur == origin) {
                             //same item id exist , so we moving it 
                             networkInventoryBehaviour.cmd_ItemMove(it);
-                           
                         }
                         else {
+                            //Debug.Log($"Current network inventory ID: {cur} Original network inventory ID: {origin}");
 
-                            
                             //item with that runtime id dosent exist here so we request to add it
-                             Debug.Log($"EVENT: ADD item {it.ItemName} | ID: {it.RuntimeID} | InventoryID: {inventory.NetworkInventoryId}");
-                            networkInventoryBehaviour.cmd_ItemAdd(it);
+                            //   Debug.Log($"EVENT: ADD item {it.ItemName} | ID: {it.RuntimeID} | InventoryID: {inventory.NetworkInventoryId}");
+                            networkInventoryBehaviour.cmd_ItemAdd(it, cur);
                         }
-                    }else Debug.Log("no inventory syncer");
+                    }
+                    else Debug.Log("no inventory syncer");
 
                     break;
                 case InventoryDraggedItem.DropMode.Swapped:
@@ -431,9 +435,9 @@ namespace Exile.Inventory {
                 // Using _draggedItem.item instead of _itemToDrag because _itemToDrag
                 // may be null or refer to old state while dragging.
                 var netData = new NetworkedItemData(_draggedItem.item);
-               // networkInventoryBehaviour.cmd_ItemRotated(netData);
+                // networkInventoryBehaviour.cmd_ItemRotated(netData);
             }
-        } 
+        }
 
         /// <summary>
         /// Toggles the rotated state of the dragged item and updates its size/rotation.

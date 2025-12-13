@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Exile.Inventory;
-using Exile.Inventory.Examples;
 using Exile.Inventory.Network;
 using FishNet.Connection;
 using FishNet.Object;
@@ -58,120 +57,115 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
     /// <summary>
     /// Internal provider for the InventoryManager.
     /// </summary>
-    private InventoryProvider _runtimeProvider;
+    private NetworkInventoryProvider _runtimeProvider;
 
-    private int AssignedInventoryID;
+    private readonly SyncVar<int> AssignedInventoryID = new SyncVar<int>();
+
+    [Header("Spawning")] [SerializeField] private NetworkObject _droppedItemPrefab;
 
     #endregion
 
     #region Unity Lifecycle
 
     private void OnDestroy() {
-        _items.OnChange -= OnItemsChanged;
+        _items.OnChange                           -= OnSyncListChanged;
+         AssignedInventoryID.OnChange -= OnInventoryIDChanged;
     }
 
-    #endregion
+    #endregion 
 
     #region FishNet Lifecycle
 
+    /// <summary>
+    /// Invoked when the object is initialized on the server.
+    /// </summary>
     public override void OnStartServer() {
+        // Call the base method to initialize the object on the server.
         base.OnStartServer();
 
-
+        // Check if the Item Manager runtime is null.
         if (ItemManagerRuntime.Instance is null) {
-            UnityEngine.Debug.Log($"Item Manager runtile is null");
-            AssignedInventoryID = Random.Range(0, 9999);
-        }
-        else {
-            AssignedInventoryID = ItemManagerRuntime.Instance.GetNextContainerId();
+            // If it is null, throw an exception.
+            throw new InvalidOperationException("Item Manager runtime is null");
         }
 
-        // for debuging purpose add id to the name of root object 
-        UnityEngine.Debug.Log($"netInv on {gameObject.transform.root.name}");
-        gameObject.transform.root.name += $"  {AssignedInventoryID}";
+        // If it is not null, register the inventory with the Item Manager runtime and assign the returned ID to AssignedInventoryID.
+        AssignedInventoryID.Value = ItemManagerRuntime.Instance.RegisterInventory(this);
 
+        // Append the inventory ID to the name of the root object for debugging purposes.
+        gameObject.transform.root.name += $"  {AssignedInventoryID.Value}";
 
-        _runtimeProvider = new InventoryProvider();
-        Inventory        = new InventoryManager(AssignedInventoryID, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
+        // Create a new instance of NetworkInventoryProvider using the _items, _itemDatabase, InventoryRenderMode.Grid, and the product of _initialWidth and _initialHeight as parameters.
+        _runtimeProvider = new NetworkInventoryProvider(_items, _itemDatabase, InventoryRenderMode.Grid, _initialWidth * _initialHeight);
 
-
-        // Subscribe to incremental network changes
-        _items.OnChange += OnItemsChanged;
-
-        // Push initial state into SyncList
-        PopulateSyncListFromManager();
+        // Create a new instance of InventoryManager using AssignedInventoryID.Value, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, and _inventoryName as parameters.
+        Inventory = new InventoryManager(AssignedInventoryID.Value, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
     }
 
     public override void OnStartClient() {
         base.OnStartClient();
-        
-        _runtimeProvider = new InventoryProvider();
-        Inventory        = new InventoryManager(AssignedInventoryID, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
 
-        _items.OnChange += OnItemsChanged;
+        // Subscribe to ID changes to ensure we initialize with the correct ID
+        AssignedInventoryID.OnChange += OnInventoryIDChanged;
 
+        // If we already have a valid ID (Snapshot received before OnStartClient), initialize immediately
+        if (AssignedInventoryID.Value != -1) {
+            InitializeClientInventory(AssignedInventoryID.Value);
+        }
+        else {
+            Debug.Log($"[Client] OnStartClient: Waiting for Inventory ID sync...");
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to ID changes and initializes client InventoryManager if a valid ID is received.
+    /// </summary>
+    /// <param name="prev">Previous ID value.</param>
+    /// <param name="next">New ID value.</param>
+    /// <param name="asServer">If the change is from server or not.</param>
+    private void OnInventoryIDChanged(int prev, int next, bool asServer) {
+        if (asServer) return; // Server doesn't need to re-init on its own change
+
+        if (next != 0) {
+            //Debug.Log($"[Client] Inventory ID Received: {next}. Initializing...");
+            InitializeClientInventory(next);
+        }
+    }
+
+    private void InitializeClientInventory(int inventoryId) {
+        // Prevent double initialization if we already have this ID set up
+        if (Inventory != null && Inventory.NetworkInventoryId == inventoryId)
+            return;
+
+        Debug.Log($"[Client] Initializing InventoryManager with ID: {inventoryId}");
+
+        // Use NetworkInventoryProvider on client too
+        var netProvider = new NetworkInventoryProvider(_items, _itemDatabase, InventoryRenderMode.Grid, _initialWidth * _initialHeight);
+        _runtimeProvider = netProvider;
+
+        Inventory = new InventoryManager(inventoryId, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
+
+        // When SyncList changes, we just need to tell Inventory to Rebuild (refresh view)
+        // Ensure we don't double subscribe
+        _items.OnChange -= OnSyncListChanged;
+        _items.OnChange += OnSyncListChanged;
 
         OnInventoryInitialized?.Invoke();
+    }
+
+    private void OnSyncListChanged(SyncListOperation op, int index, NetworkedItemData oldItem, NetworkedItemData newItem, bool asServer) {
+        // If we are server, the change likely came from our own logic (via Provider), so we might not need to force rebuild if logic did it.
+        // But for safety and client sync:
+        if (!asServer) {
+            Inventory?.Rebuild();
+        }
     }
 
     #endregion
 
     #region SyncList Handling
 
-    /// <summary>
-    /// Called whenever the SyncList of items changes.
-    /// </summary>
-    private void OnItemsChanged(SyncListOperation op, int index, NetworkedItemData oldItem, NetworkedItemData newItem, bool asServer) {
-        // Server already has authoritative state; only clients rebuild.
-        if (IsServerInitialized)
-            return;
-
-        RefreshInventoryFromSyncList();
-
-        // Operation-specific handling hook (currently unused but kept for future logic).
-        switch (op) {
-            case SyncListOperation.Add:
-                break;
-            case SyncListOperation.Insert:
-                break;
-            case SyncListOperation.Set:
-
-                break;
-            case SyncListOperation.RemoveAt:
-            case SyncListOperation.Clear:
-            case SyncListOperation.Complete:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(op), op, null);
-        }
-    }
-
-    /// <summary>
-    /// Rebuild local Inventory from the authoritative SyncList snapshot (client-side).
-    /// </summary>
-    private void RefreshInventoryFromSyncList() {
-        if (Inventory == null || _itemDatabase == null)
-            return;
-
-        Inventory.Clear();
-
-        for (int i = 0; i < _items.Count; i++) {
-            var itemData = _items[i];
-
-            var itemTemplate = _itemDatabase.GetItem(itemData.ItemId);
-            if (itemTemplate == null) {
-                Debug.LogWarning($"[Client] RefreshInventoryFromSyncList: No item template for ID {itemData.ItemId} (Name: {itemData.ItemName})");
-                continue;
-            }
-
-            var newItem = itemTemplate.CreateInstance(itemData.RuntimeID);
-            itemData.ApplyToItem(newItem);
-
-            if (!Inventory.TryAddAt(newItem, newItem.position)) {
-                Debug.LogWarning($"[Client] RefreshInventoryFromSyncList: Failed to place item {itemData.ItemName} at {itemData.Position}");
-            }
-        }
-    }
+    // Removed manual SyncList listeners as Provider handles it directly.
 
     #endregion
 
@@ -179,10 +173,10 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     [Server]
     private void PopulateSyncListFromManager() {
+        // This acts as a 'Reset' now if needed
         _items.Clear();
 
         foreach (var item in Inventory.allItems) {
-            //  Debug.Log($"SyncList: adding {item.RuntimeID} {item.ItemName}");
             _items.Add(new NetworkedItemData(item));
         }
     }
@@ -193,54 +187,34 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     [Server]
     public bool Server_TryAdd(IInventoryItem item) {
-        if (!Inventory.TryAdd(item))
-            return false;
-
-        PopulateSyncListFromManager();
-        // Incremental update instead of full rebuild.
-
-        return true;
+        // Just call logic. Logic calls Provider. Provider calls SyncList.
+        return Inventory.TryAdd(item);
     }
 
     [Server]
     private bool Server_TryAddAt(IInventoryItem item, Vector2Int pos) {
-        if (!Inventory.TryAddAt(item, pos))
-            return false;
-
-        // Incremental update instead of full rebuild.
-        _items.Add(new NetworkedItemData(item));
-
-        return true;
+        return Inventory.TryAddAt(item, pos);
     }
 
     [Server]
-    private void Server_TryRemove(IInventoryItem item) {
-        Inventory.TryRemove(item);
-
-
-        // Incremental update instead of full rebuild.
-        int index = _items.FindIndex(x => x.RuntimeID == item.RuntimeID);
-        if (index >= 0)
-            _items.RemoveAt(index);
-        else
-            Debug.LogWarning($"[Server] Server_TryRemove: No SyncList entry for RID {item.RuntimeID}");
+    private bool Server_TryRemove(IInventoryItem item) {
+        // Just call logic.
+        return Inventory.TryRemove(item);
     }
 
     [Server]
     public bool Server_TrySwap(IInventoryItem a, IInventoryItem b) {
-        if (!Inventory.SwapItems(a, b))
-            return false;
+        bool success = Inventory.SwapItems(a, b);
 
-        // Both items changed position, so update both entries.
-        int indexA = _items.FindIndex(x => x.RuntimeID == a.RuntimeID);
-        if (indexA >= 0)
-            _items[indexA] = new NetworkedItemData(a);
+        // SwapItems updates positions. We need to ensure SyncList is updated with new positions.
+        // InventoryManager calls TryAddAt internally during Swap.
+        // Since we modified TryAddAt to set position then Add, this works for the 'Add' part.
+        // But Swap logic is: Remove A, Remove B, Add A(at B), Add B(at A).
+        // Since it uses TryRemove and TryAddAt, the Provider (and thus SyncList) 
+        // will automatically be updated with Remove -> Remove -> Add -> Add operations.
+        // So no manual SyncList manipulation is needed here anymore!
 
-        int indexB = _items.FindIndex(x => x.RuntimeID == b.RuntimeID);
-        if (indexB >= 0)
-            _items[indexB] = new NetworkedItemData(b);
-
-        return true;
+        return success;
     }
 
     #endregion
@@ -311,103 +285,157 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     [ServerRpc(RequireOwnership = false)]
     public void cmd_ItemMove(NetworkedItemData item) {
+        // 1. Find the item in the inventory logic
         var existingItem = Inventory.GetItemByRuntimeID(item.RuntimeID);
-        if (existingItem == null)
-            return;
-
-        bool removedFromOldPosition = Inventory.TryRemove(existingItem);
-        if (!removedFromOldPosition) {
-            Debug.Log("Couldn't remove item from old position.");
+        if (existingItem == null) {
+            Debug.LogWarning($"[Server] cmd_ItemMove: Item {item.RuntimeID} not found in inventory.");
             return;
         }
 
-        bool addedToNewPosition = Inventory.TryAddAt(existingItem, item.Position);
-        if (!addedToNewPosition)
-            return;
+        // Capture state for rollback
+        var oldPosition = existingItem.position;
+        var oldRotation = existingItem.Rotated;
+        var oldWidth    = existingItem.width;
+        var oldHeight   = existingItem.height;
 
-        int syncListIndex = _items.FindIndex(x => x.RuntimeID == item.RuntimeID);
-        if (syncListIndex < 0) {
-            Debug.LogWarning($"No entry found in SyncList for RID {item.RuntimeID}");
-            Debug.LogWarning($"inventory {AssignedInventoryID}");
+        // 2. Remove from old position (This updates SyncList via Provider)
+        bool removed = Inventory.TryRemove(existingItem);
+        if (!removed) {
+            Debug.LogWarning("Couldn't remove item from old position.");
             return;
         }
 
-        var networkedItemData = _items[syncListIndex];
-
-        // Handle item rotation
+        // 3. Update properties (Rotation) on the instance BEFORE adding back
         if (item.Rotated) {
-            networkedItemData.Height  = item.Height;
-            networkedItemData.Width   = item.Width;
-            networkedItemData.Rotated = true;
+            existingItem.Rotated = true;
+            existingItem.width   = item.Width;
+            existingItem.height  = item.Height;
         }
         else {
-            networkedItemData.Height  = item.Width;
-            networkedItemData.Width   = item.Height;
-            networkedItemData.Rotated = false;
+            existingItem.Rotated = false;
+            existingItem.width   = item.Width;
+            existingItem.height  = item.Height;
         }
 
-        networkedItemData.Position = item.Position;
-        _items[syncListIndex]      = networkedItemData; // triggers SyncList sync
+        // 4. Add to new position (This updates SyncList via Provider)
+        bool added = Inventory.TryAddAt(existingItem, item.Position);
+
+        if (!added) {
+            Debug.LogWarning($"[Server] Failed to move item to {item.Position}. Rolling back to {oldPosition}.");
+
+            // Revert properties
+            existingItem.Rotated = oldRotation;
+            existingItem.width   = oldWidth;
+            existingItem.height  = oldHeight;
+
+            // Revert position
+            bool rolledBack = Inventory.TryAddAt(existingItem, oldPosition);
+            if (!rolledBack) {
+                Debug.LogError($"[Server] CRITICAL: Item {item.RuntimeID} lost during move! Could not revert to {oldPosition}.");
+            }
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void cmd_ItemAdd(NetworkedItemData item) {
-
-        UnityEngine.Debug.Log($"itemAdd being called on inv  {AssignedInventoryID}");
+    public void cmd_ItemAdd(NetworkedItemData item, int inventoryID) {
         var itemDef = _itemDatabase.GetItem(item.ItemId);
-        if (itemDef == null)
+        if (itemDef == null) {
+            Debug.LogError($"[Server] cmd_ItemAdd: Item definition not found for ID {item.ItemId}");
             return;
-
+        }
 
         var instance = itemDef.CreateInstance(item.RuntimeID);
         item.ApplyToItem(instance);
 
+        if (AssignedInventoryID.Value != inventoryID) {
+            // Transfer logic
+          //  Debug.Log($"[Server] Transferring item {item.RuntimeID} from Inv {AssignedInventoryID.Value} to Inv {inventoryID}");
 
-        // add to synclist
-        int index = _items.FindIndex(x => x.RuntimeID == instance.RuntimeID);
-        if (index < 0) {
-            _items.Add(new NetworkedItemData(instance));
-            Debug.Log($"item added to synclist {item.ItemName} RID {item.RuntimeID}");
+            // 1. Remove from source
+            var  existingItem   = Inventory.GetItemByRuntimeID(item.RuntimeID);
+            bool removalSuccess = false;
+
+            if (existingItem != null) {
+                removalSuccess = Server_TryRemove(existingItem);
+            }
+            else {
+                if (!IsServerInitialized)
+                    Debug.LogWarning($"[Server] Item {item.RuntimeID} not found in source inventory {AssignedInventoryID.Value}. Cannot remove.");
+                // Fail-safe: if it's not there, we can't transfer it reliably (dupe risk or ghost item)
+            }
+
+            if (!removalSuccess) {
+                if (!IsServerInitialized)
+                    Debug.LogWarning($"[Server] Failed to remove item from source inventory {AssignedInventoryID.Value}. Aborting transfer.");
+                return;
+            }
+
+            // 2. Add to destination
+            var  targetInventory = ItemManagerRuntime.Instance.GetInventoryByID(inventoryID);
+            bool success         = false;
+
+            if (targetInventory != null) {
+                success = targetInventory.Server_TryAddAt(instance, item.Position);
+            }
+            else {
+                Debug.LogError($"[Server] Target inventory ID {inventoryID} not found!");
+            }
+
+            // 3. Rollback if failed
+            if (!success) {
+                Debug.LogWarning($"[Server] Transfer failed. Returning item to source inventory {AssignedInventoryID.Value}.");
+                bool rolledBack = Server_TryAddAt(instance, item.Position); // Try adding back to original spot
+                if (!rolledBack) {
+                    rolledBack = Server_TryAdd(instance);
+                }
+
+                if (!rolledBack) {
+                    Debug.LogError($"[Server] CRITICAL: Item {item.RuntimeID} lost during transfer! Could not return to source.");
+                }
+            }
         }
-
-        Server_TryAddAt(instance, item.Position);
-
-
-        // if (Inventory.TryAddAt(instance, item.Position)) {
-        //     Debug.Log($"Item {item.ItemName} has been added. RID {item.RuntimeID}");
-        // }
+        else {
+            Server_TryAddAt(instance, item.Position);
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void cmd_ItemDrop(NetworkedItemData item) {
-        // If the server  initialized, remove the item directly from the SyncList.
-        if (IsServerInitialized) {
-            var index = _items.FindIndex(x => x.RuntimeID == item.RuntimeID);
-            if (index >= 0)
-                _items.RemoveAt(index);
+        var existingItem = Inventory.GetItemByRuntimeID(item.RuntimeID);
+
+        // 1. Remove from inventory
+        bool removed = false;
+        if (existingItem != null) {
+            removed = Server_TryRemove(existingItem);
+        }
+        else {
+            if (IsServerInitialized) {
+                removed = true;
+            }
+            else {
+            // Fallback desync check?
+            Debug.LogWarning($"[Server] cmd_ItemDrop: Item {item.RuntimeID} not found in logic. Cannot drop.");
             return;
+                
+            }
         }
 
-        var itemToRemove = Inventory.allItems.FirstOrDefault(x => x.RuntimeID == item.RuntimeID);
-        if (itemToRemove != null)
-            Server_TryRemove(itemToRemove);
+        if (removed && existingItem != null && _droppedItemPrefab != null) {
+            // 2. Spawn world object
+            var spawnPos      = transform.position + Vector3.up + Random.insideUnitSphere * 0.5f;
+            var droppedObject = Instantiate(_droppedItemPrefab, spawnPos, Quaternion.identity);
 
-        // The commented-out code below represents an alternative or previous approach
-        // to handling item drops, potentially involving a 'TryDrop' method on the Inventory.
-        // var existing = Inventory.GetItemByRuntimeID(item.RuntimeID);
-        // if (existing != null) {
-        // bool canRemove = Inventory.TryDrop(existing);
-        // if (canRemove) {
-        // Debug.Log($"Item dropped {item.ItemName}");
-        // }
-        // }
-        // Debugging logs for inventory contents after a drop attempt.
-        // Debug.Log($"list of items in inventory now {Inventory.allItems.Length}");
-        // if (Inventory.allItems.Length > 0) {
-        // foreach (var itemx in Inventory.allItems) {
-        // Debug.Log($"ItemName: {itemx.ItemName} | RID: {itemx.RuntimeID}");
-        // }
-        // }
+            var pickup = droppedObject.GetComponent<ItemPickup>();
+            if (pickup != null) {
+                // Initialize the pickup with item data
+                if (existingItem is ItemBase itemBase) {
+                    pickup.SetItem(itemBase);
+                }
+            }
+
+            ServerManager.Spawn(droppedObject);
+            Debug.Log($"[Server] Item {item.RuntimeID} dropped and spawned.");
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]

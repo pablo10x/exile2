@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using Exile.Inventory;
 using FishNet.Connection;
 using FishNet.Object;
@@ -27,9 +28,12 @@ public class ContainerBox : NetworkBehaviour, IInteractable {
     public override void OnStartClient() {
         base.OnStartClient();
         int randomNumber = Random.Range(0, 10);
-        for (int i = 0; i < randomNumber; i++) {
-          AddRandomItem();
-            
+        for (int i = 0; i < randomNumber; i++)
+        {
+            AddRandomItem();
+            base.Despawn(DespawnType.Destroy);
+
+
         }
     }
 
@@ -48,7 +52,7 @@ public class ContainerBox : NetworkBehaviour, IInteractable {
 
     public void Interact(PlayerInteraction player) {
         // 1. Client Logic: Open UI locally if you want immediate feedback (optional)
-        
+
         InventoryUIManager.Instance.EnableInventory();
         // 2. Network Logic: Tell the server we want to interact
         // We need to send an RPC to the server. 
@@ -58,12 +62,14 @@ public class ContainerBox : NetworkBehaviour, IInteractable {
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void CmdInteract(NetworkConnection caller) {
+    private void CmdInteract(NetworkConnection caller)
+    {
         // 3. Server Logic: Received request from client.
-        // Now we call the method on the NetworkInventoryBehaviour that sends the TargetRpc back.
-       
-       
-        _networkInventoryBehaviour.SendFullInventory(caller,true);
+        // Now we call the method in the NetworkInventoryBehaviour that sends the TargetRpc back.
+
+        _networkInventoryBehaviour.SendFullInventory(caller, true);
+
+
     }
 
 
