@@ -5,9 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Exile.Inventory;
 using Exile.Inventory.Network;
-using FishNet.Connection;
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -16,7 +13,7 @@ using Random = UnityEngine.Random;
 /// Network wrapper that synchronizes <see cref="InventoryManager"/> state via a SyncList of <see cref="NetworkedItemData"/>.
 /// This class does NOT modify your InventoryManager logic; it only mirrors state for networking.
 /// </summary>
-public class NetworkInventoryBehaviour : NetworkBehaviour {
+public class NetworkInventoryBehaviour : MonoBehaviour {
     #region Testing
 
     [BoxGroup("Testing")] [SerializeField] private List<ItemBase> items = new List<ItemBase>();
@@ -38,7 +35,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
     /// <summary>
     /// Networked list of items (authoritative on server).
     /// </summary>
-    private readonly SyncList<NetworkedItemData> _items = new();
+    private readonly List<NetworkedItemData> _items = new();
 
     /// <summary>
     /// Local non-networked runtime inventory (actual gameplay logic).
@@ -59,17 +56,17 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
     /// </summary>
     private NetworkInventoryProvider _runtimeProvider;
 
-    private readonly SyncVar<int> AssignedInventoryID = new SyncVar<int>();
+    private int AssignedInventoryID;
 
-    [Header("Spawning")] [SerializeField] private NetworkObject _droppedItemPrefab;
+    [Header("Spawning")] [SerializeField] private GameObject _droppedItemPrefab;
 
     #endregion
 
     #region Unity Lifecycle
 
     private void OnDestroy() {
-        _items.OnChange                           -= OnSyncListChanged;
-         AssignedInventoryID.OnChange -= OnInventoryIDChanged;
+        //_items.OnChange                           -= OnSyncListChanged;
+         //AssignedInventoryID.OnChange -= OnInventoryIDChanged;
     }
 
     #endregion 
@@ -79,9 +76,9 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
     /// <summary>
     /// Invoked when the object is initialized on the server.
     /// </summary>
-    public override void OnStartServer() {
+    public void OnStartServer() {
         // Call the base method to initialize the object on the server.
-        base.OnStartServer();
+        //base.OnStartServer();
 
         // Check if the Item Manager runtime is null.
         if (ItemManagerRuntime.Instance is null) {
@@ -90,27 +87,27 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         }
 
         // If it is not null, register the inventory with the Item Manager runtime and assign the returned ID to AssignedInventoryID.
-        AssignedInventoryID.Value = ItemManagerRuntime.Instance.RegisterInventory(this);
+        AssignedInventoryID = ItemManagerRuntime.Instance.RegisterInventory(this);
 
         // Append the inventory ID to the name of the root object for debugging purposes.
-        gameObject.transform.root.name += $"  {AssignedInventoryID.Value}";
+        gameObject.transform.root.name += $"  {AssignedInventoryID}";
 
         // Create a new instance of NetworkInventoryProvider using the _items, _itemDatabase, InventoryRenderMode.Grid, and the product of _initialWidth and _initialHeight as parameters.
         _runtimeProvider = new NetworkInventoryProvider(_items, _itemDatabase, InventoryRenderMode.Grid, _initialWidth * _initialHeight);
 
-        // Create a new instance of InventoryManager using AssignedInventoryID.Value, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, and _inventoryName as parameters.
-        Inventory = new InventoryManager(AssignedInventoryID.Value, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
+        // Create a new instance of InventoryManager using AssignedInventoryID, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, and _inventoryName as parameters.
+        Inventory = new InventoryManager(AssignedInventoryID, _runtimeProvider, _initialWidth, _initialHeight, _allowAddItems, _inventoryName, this);
     }
 
-    public override void OnStartClient() {
-        base.OnStartClient();
+    public void OnStartClient() {
+        //base.OnStartClient();
 
         // Subscribe to ID changes to ensure we initialize with the correct ID
-        AssignedInventoryID.OnChange += OnInventoryIDChanged;
+        //AssignedInventoryID.OnChange += OnInventoryIDChanged;
 
         // If we already have a valid ID (Snapshot received before OnStartClient), initialize immediately
-        if (AssignedInventoryID.Value != -1) {
-            InitializeClientInventory(AssignedInventoryID.Value);
+        if (AssignedInventoryID != -1) {
+            InitializeClientInventory(AssignedInventoryID);
         }
         else {
             Debug.Log($"[Client] OnStartClient: Waiting for Inventory ID sync...");
@@ -147,13 +144,13 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
         // When SyncList changes, we just need to tell Inventory to Rebuild (refresh view)
         // Ensure we don't double subscribe
-        _items.OnChange -= OnSyncListChanged;
-        _items.OnChange += OnSyncListChanged;
+        //_items.OnChange -= OnSyncListChanged;
+        //_items.OnChange += OnSyncListChanged;
 
         OnInventoryInitialized?.Invoke();
     }
 
-    private void OnSyncListChanged(SyncListOperation op, int index, NetworkedItemData oldItem, NetworkedItemData newItem, bool asServer) {
+    private void OnSyncListChanged(int index, NetworkedItemData oldItem, NetworkedItemData newItem, bool asServer) {
         // If we are server, the change likely came from our own logic (via Provider), so we might not need to force rebuild if logic did it.
         // But for safety and client sync:
         if (!asServer) {
@@ -171,7 +168,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     #region Server Inventory Event Handlers
 
-    [Server]
+    
     private void PopulateSyncListFromManager() {
         // This acts as a 'Reset' now if needed
         _items.Clear();
@@ -185,24 +182,24 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     #region Server Authoritative API
 
-    [Server]
+    
     public bool Server_TryAdd(IInventoryItem item) {
         // Just call logic. Logic calls Provider. Provider calls SyncList.
         return Inventory.TryAdd(item);
     }
 
-    [Server]
+    
     private bool Server_TryAddAt(IInventoryItem item, Vector2Int pos) {
         return Inventory.TryAddAt(item, pos);
     }
 
-    [Server]
+    
     private bool Server_TryRemove(IInventoryItem item) {
         // Just call logic.
         return Inventory.TryRemove(item);
     }
 
-    [Server]
+    
     public bool Server_TrySwap(IInventoryItem a, IInventoryItem b) {
         bool success = Inventory.SwapItems(a, b);
 
@@ -221,7 +218,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     #region Editor / Dev RPCs
 
-    [ServerRpc(RequireOwnership = false)]
+    
     public void RequestAddServerRpc(int itemId) {
         var itemDef = _itemDatabase.GetItem(itemId);
         if (itemDef == null)
@@ -231,7 +228,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         Server_TryAdd(itemInstance);
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    
     public void RequestAddAtServerRpc(int itemId, int x, int y) {
         var itemDef = _itemDatabase.GetItem(itemId);
         if (itemDef == null)
@@ -249,8 +246,8 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
     /// Sends the entire inventory state to a specific client.
     /// Useful for late-joining players or refreshing an inventory view.
     /// </summary>
-    [Server]
-    public void SendFullInventory(NetworkConnection conn, bool openInventory = false) {
+    
+    public void SendFullInventory(object conn, bool openInventory = false) {
         if (Inventory == null)
             return;
 
@@ -260,8 +257,8 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         TargetReceiveFullInventory(conn, openInventory, inv);
     }
 
-    [TargetRpc]
-    private void TargetReceiveFullInventory(NetworkConnection conn, bool openInventory, NetWorkedInventoryData networkedInventory) {
+    
+    private void TargetReceiveFullInventory(object conn, bool openInventory, NetWorkedInventoryData networkedInventory) {
         Inventory.Clear();
 
         foreach (var itemData in networkedInventory.allitems) {
@@ -283,7 +280,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
     #region Item Commands (RPC)
 
-    [ServerRpc(RequireOwnership = false)]
+    
     public void cmd_ItemMove(NetworkedItemData item) {
         // 1. Find the item in the inventory logic
         var existingItem = Inventory.GetItemByRuntimeID(item.RuntimeID);
@@ -336,7 +333,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    
     public void cmd_ItemAdd(NetworkedItemData item, int inventoryID) {
         var itemDef = _itemDatabase.GetItem(item.ItemId);
         if (itemDef == null) {
@@ -347,7 +344,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         var instance = itemDef.CreateInstance(item.RuntimeID);
         item.ApplyToItem(instance);
 
-        if (AssignedInventoryID.Value != inventoryID) {
+        if (AssignedInventoryID != inventoryID) {
             // Transfer logic
           //  Debug.Log($"[Server] Transferring item {item.RuntimeID} from Inv {AssignedInventoryID.Value} to Inv {inventoryID}");
 
@@ -359,14 +356,14 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
                 removalSuccess = Server_TryRemove(existingItem);
             }
             else {
-                if (!IsServerInitialized)
-                    Debug.LogWarning($"[Server] Item {item.RuntimeID} not found in source inventory {AssignedInventoryID.Value}. Cannot remove.");
+                //if (!IsServerInitialized)
+                    Debug.LogWarning($"[Server] Item {item.RuntimeID} not found in source inventory {AssignedInventoryID}. Cannot remove.");
                 // Fail-safe: if it's not there, we can't transfer it reliably (dupe risk or ghost item)
             }
 
             if (!removalSuccess) {
-                if (!IsServerInitialized)
-                    Debug.LogWarning($"[Server] Failed to remove item from source inventory {AssignedInventoryID.Value}. Aborting transfer.");
+                //if (!IsServerInitialized)
+                    Debug.LogWarning($"[Server] Failed to remove item from source inventory {AssignedInventoryID}. Aborting transfer.");
                 return;
             }
 
@@ -383,7 +380,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
 
             // 3. Rollback if failed
             if (!success) {
-                Debug.LogWarning($"[Server] Transfer failed. Returning item to source inventory {AssignedInventoryID.Value}.");
+                Debug.LogWarning($"[Server] Transfer failed. Returning item to source inventory {AssignedInventoryID}.");
                 bool rolledBack = Server_TryAddAt(instance, item.Position); // Try adding back to original spot
                 if (!rolledBack) {
                     rolledBack = Server_TryAdd(instance);
@@ -399,7 +396,7 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    
     public void cmd_ItemDrop(NetworkedItemData item) {
         var existingItem = Inventory.GetItemByRuntimeID(item.RuntimeID);
 
@@ -409,15 +406,15 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
             removed = Server_TryRemove(existingItem);
         }
         else {
-            if (IsServerInitialized) {
-                removed = true;
-            }
-            else {
+            //if (IsServerInitialized) {
+            //    removed = true;
+            //}
+            //else {
             // Fallback desync check?
             Debug.LogWarning($"[Server] cmd_ItemDrop: Item {item.RuntimeID} not found in logic. Cannot drop.");
             return;
                 
-            }
+            //}
         }
 
         if (removed && existingItem != null && _droppedItemPrefab != null) {
@@ -433,12 +430,12 @@ public class NetworkInventoryBehaviour : NetworkBehaviour {
                 }
             }
 
-            ServerManager.Spawn(droppedObject);
+            //ServerManager.Spawn(droppedObject);
             Debug.Log($"[Server] Item {item.RuntimeID} dropped and spawned.");
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+
     public void cmd_ItemPickedUp(NetworkedItemData item) {
         // Hook for pickup logic if needed.
     }

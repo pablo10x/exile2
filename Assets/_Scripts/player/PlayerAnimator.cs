@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Animancer;
-using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace core.player {
-    public class PlayerAnimator : NetworkBehaviour {
+    public class PlayerAnimator : MonoBehaviour {
         #region Fields
 
         //get player
@@ -323,4 +322,3 @@ namespace core.player {
         }
     }
 }
-

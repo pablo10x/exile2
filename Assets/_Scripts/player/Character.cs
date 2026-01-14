@@ -3,28 +3,29 @@ using Animancer;
 using core.Managers;
 using core.player;
 using core.Vehicles;
-using FishNet.Object.Prediction;
-using FishNet.Transporting;
-using FishNet.Utility.Template;
+using ExileSurvival.Networking.Core;
+using ExileSurvival.Networking.Data;
+using ExileSurvival.Networking.Entities;
 using KinematicCharacterController;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
+using LiteNetLib;
 
-public class Character : TickNetworkBehaviour, ICharacterController {
+public class Character : PredictedEntity, ICharacterController {
     #region Character Enums, Properties, and Fields
 
-    public enum CharacterState {
-        Idle,
-        Strafe,
-        Crouched,
-        Running,
-        Jumping,
-        InVehicleDriver,
-        InVehiclePassenger,
-        Falling,
-        HandledByStateMachine
+    public enum CharacterState : byte {
+        Idle = 0,
+        Strafe = 1,
+        Crouched = 2,
+        Running = 3,
+        Jumping = 4,
+        InVehicleDriver = 5,
+        InVehiclePassenger = 6,
+        Falling = 7,
+        HandledByStateMachine = 8
     }
 
     public                        CharacterCam            orbitCamera;
@@ -75,84 +76,10 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     [FoldoutGroup("Reconciliation")] public float positionSnapThreshold = 3f; // Snap if error > this
     [FoldoutGroup("Reconciliation")] public float ReconsileSmoothTime   = 25.5f;
+    
     // Smoothing state
     private Vector3    _reconcilePositionVelocity;
-    private float      _reconcileRotationVelocity;
-    private Vector3    _targetReconcilePosition;
-    private Quaternion _targetReconcileRotation;
-    private bool       _isReconciling;
-    private float      _reconcileStartTime;
     public  Quaternion _replicatedCameraRotation = Quaternion.identity;
-
-    /// <summary>
-    /// Input data that gets sent from client to server every tick
-    /// This is SMALL - only the button presses, not positions!
-    /// </summary>
-    public struct ReplicateData : IReplicateData { // what we send
-        public float      Horizontal;              // Joystick left/right
-        public float      Vertical;                // Joystick forward/back
-        public bool       Jump;                    // Jump button pressed
-        public bool       Crouch;                  // Crouch button pressed
-        public Quaternion CamRotation;             //
-
-        /// <summary>
-        /// The tick at which this data was created.
-        /// </summary>
-        // Constructor to easily create the data
-        public ReplicateData(float horizontal, float vertical, bool jump, bool crouch, Quaternion camRotation) {
-            Horizontal  = horizontal;
-            Vertical    = vertical;
-            Jump        = jump;
-            Crouch      = crouch;
-            _tick       = 0;
-            CamRotation = camRotation;
-        }
-
-        // Required by Fish-Net
-        /// <summary>
-        /// The tick at which this data was created.
-        /// </summary>
-        private uint _tick;
-
-        /// <summary>
-        /// Gets the tick at which this data was created.
-        /// </summary>
-        public uint GetTick() => _tick;
-
-        /// <summary>
-        /// Sets the tick at which this data was created.
-        /// </summary>
-        public void SetTick(uint value) => _tick = value;
-
-        public void Dispose() { }
-    }
-
-    // private ReplicateData _lastTickedReplicateData = default;
-
-    /// <summary>
-    /// State data that gets sent from server to client for corrections
-    /// This contains the "truth" - where you really are
-    /// </summary>
-    public struct ReconcileData : IReconcileData { //what server send
-        public Vector3                  Position;
-        public Quaternion               Rotation;
-        public Vector3                  Velocity;
-        public Character.CharacterState State;
-
-        public ReconcileData(Vector3 position, Quaternion rotation, Vector3 velocity, CharacterState state) {
-            Position = position;
-            Rotation = rotation;
-            Velocity = velocity;
-            State    = state;
-            _tick    = 0;
-        }
-
-        // Required by Fish-Net
-        private uint _tick;
-        public  uint GetTick()           => _tick;
-        public  void SetTick(uint value) => _tick = value;
-        public  void Dispose()           { }
-    }
 
     #endregion
 
@@ -162,7 +89,6 @@ public class Character : TickNetworkBehaviour, ICharacterController {
             if (_currentCharacterState == value) return;
             if (value == CharacterState.Falling) is_Falling = true;
             _currentCharacterState = value;
-            //OnCharacterStateChanged?.Invoke(value);
             UpdateAnimation();
         }
     }
@@ -178,11 +104,10 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     private Vector3 _internalVelocityAdd = Vector3.zero;
     public  float   Steeringsmoothness   = 5f;
-    private Vector3 _lookInputVector;
+    //private Vector3 _lookInputVector;
     private Vector3 _moveInputVector;
 
     [FoldoutGroup("Movement/Transitions")] public float movementTransitionSpeed = 8f;
-    //private                                       float currentMoveSpeed;
     private float targetMoveSpeed;
     private float speedChangeVelocity;
 
@@ -224,7 +149,6 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     private float      _lastVertical;
     private bool       _lastJumpInput;
     private bool       _crouchTogglePressed; // Track if crouch was pressed this frame
-    private Quaternion _camerarotation;
 
     #endregion
 
@@ -237,267 +161,157 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     private void Awake() {
         navMeshAgent.transform.SetParent(transform, false);
         motor.CharacterController = this;
-
-
         InitializeAnimationLockManager();
-
-
-        SetTickCallbacks(TickCallback.Tick);
     }
 
-    /// <summary>
-    /// This replaces Update() for prediction
-    /// Called at a fixed rate synchronized between client and server
-    /// </summary>
-    protected override void TimeManager_OnTick() {
-        PerformReplicate(BuildMoveData());
-        CreateReconcile();
-    }
-
-    /// <summary>
-    /// Called after physics/movement is done
-    /// Good place for animations and visual updates
-    /// </summary>
-    protected override void TimeManager_OnPostTick() { }
-
-    /// <summary>
-    /// Packages the input we gathered into ReplicateData
-    /// This gets sent to the server
-    /// </summary>
-    /// 
-    private ReplicateData BuildMoveData() {
-        if (!IsOwner)
-            return default;
-
-        // Ensure we always have a valid camera rotation
-        var cameraRotation = orbitCamera != null
-                                 ? orbitCamera.transform.rotation
-                                 : Quaternion.identity;
-
-        ReplicateData replicateData = new ReplicateData(_lastHorizontal, _lastVertical, _lastJumpInput, _crouchTogglePressed, cameraRotation);
-
-        _lastJumpInput       = false;
-        _crouchTogglePressed = false;
-
-        return replicateData;
-    }
-
-    public override void CreateReconcile() {
-        ReconcileData rd = new ReconcileData(motor.TransientPosition,
-                                             motor.TransientRotation,
-                                             motor != null
-                                                 ? motor.Velocity
-                                                 : Vector3.zero,
-                                             _currentCharacterState);
-
-        PerformReconcile(rd);
-    }
-
-    [Replicate]
-    private void PerformReplicate(ReplicateData rd, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable) {
-        // Don't process movement if in vehicle (handle separately)
-        if (CurrentCharacterState == CharacterState.InVehicleDriver || CurrentCharacterState == CharacterState.InVehiclePassenger) {
-            return;
-        }
-
-        // Always use the tickDelta as your delta when performing actions inside replicate.
-        float delta = (float)TimeManager.TickDelta;
-        // bool  useDefaultForces = false;
-
-        /* When client only run some checks to
-         * further predict the clients future movement.
-         * This can keep the object more inlined with real-time by
-         * guessing what the clients input might be before we
-         * actually receive it.
-         *
-         * Doing this does risk a chance of graphical jitter in the
-         * scenario a de-synchronization occurs, but if only predicting
-         * a couple ticks the chances are low. */
-        // See https:// fish-networking.gitbook.io/docs/manual/guides/prediction/version-2/creating-code/predicting-states
-        // if (!IsServerStarted && !IsOwner) {
-        //     /* If ticked then set last ticked value.
-        //      * Ticked means the replicate is being run from the tick cycle, more
-        //      * specifically NOT from a replay/reconcile. */
-        //     if (state.ContainsTicked()) {
-        //         /* Dispose of old should it have anything that needs to be cleaned up.
-        //          * If you are only using value types in your data you do not need to call Dispose.
-        //          * You must implement dispose manually to cache any non-value types, if you wish. */
-        //         _lastTickedReplicateData.Dispose();
-        //         // Set new.
-        //         _lastTickedReplicateData = rd;
-        //     }
-        //     /* In the future means there is no way the data can be known to this client
-        //      * yet. For example, the client is running this script locally and due to
-        //      * how networking works, they have not yet received the latest information from
-        //      * the server.
-        //      *
-        //      * If in the future then we are only going to predict up to
-        //      * a certain amount of ticks in the future. This is us assuming that the
-        //      * server (or client which owns this in this case) is going to use the
-        //      * same input for at least X number of ticks. You can predict none, or as many
-        //      * as you like, but the more inputs you predict the higher likeliness of guessing
-        //      * wrong. If you do however predict wrong often smoothing will cover up the mistake. */
-        //     else if (state.IsFuture()) {
-        //         /* Predict up to 1 tick more. */
-        //         if (rd.GetTick() - _lastTickedReplicateData.GetTick() > 1) {
-        //             useDefaultForces = true;
-        //         }
-        //         else {
-        //             /* If here we are predicting the future. */
-        //
-        //             /* You likely do not need to dispose rd here since it would be default
-        //              * when state is 'not created'. We are simply doing it for good practice, should your ReplicateData
-        //              * contain any garbage collection. */
-        //             rd.Dispose();
-        //
-        //             rd = _lastTickedReplicateData;
-        //
-        //             /* There are some fields you might not want to predict, for example
-        //              * jump. The odds of a client pressing jump two ticks in a row is unlikely.
-        //              * The stamina check below would likely prevent such a scenario.
-        //              *
-        //              * We're going to unset jump for this reason. */
-        //             //rd.Jump = false;
-        //
-        //             /* Be aware that future predicting is not a one-size fits all
-        //              * feature. How much you predict into the future, if at all, depends
-        //              * on your game mechanics and your desired outcome. */
-        //         }
-        //     }
-        // }
-
-
-        ProcessReplicatedInput(rd);
-
-        // KinematicCharacterSystem.PreSimulationInterpolationUpdate(delta);
-        //KinematicCharacterSystem.Simulate(delta, KinematicCharacterSystem.CharacterMotors, KinematicCharacterSystem.PhysicsMovers);
-        // KinematicCharacterSystem.PostSimulationInterpolationUpdate(delta);
-
-
-        // The KinematicCharacterMotor will call our UpdateVelocity
-        // and UpdateRotation methods automatically
-        // This is where the actual movement happens
-    }
-
-    /// <summary>
-    /// Corrects the client if prediction was wrong
-    /// [Reconcile] attribute tells Fish-Net this is for corrections
-    /// </summary>
-    /// <param name="rd">The correction data from server</param>
-    /// <param name="channel">Network channel</param>
-    [Reconcile]
-    private void PerformReconcile(ReconcileData rd, Channel channel = Channel.Unreliable) {
-        float delta = (float)TimeManager.TickDelta;
-        // --- Debug Comparison ---
-        // Calculate the difference between the server's state (rd) and the client's current predicted state.
-        float positionError = Vector3.Distance(rd.Position, motor.TransientPosition);
-        float rotationError = Quaternion.Angle(rd.Rotation, motor.TransientRotation);
-
-        // Log the error for debugging. You can adjust the threshold to only log significant deviations.
-        if (positionError > 0.5f) {
-            // Debug.Log($"Reconcile difference on client {Owner.ClientId}. Pos error: {positionError:F4}");
-            if (positionError > positionSnapThreshold) {
-                motor.SetPosition(rd.Position, false);
-            }
-            else {
-                Vector3 velocityCorrection = (rd.Position - motor.TransientPosition) / ReconsileSmoothTime;
-                AddVelocity(velocityCorrection);
-            }
-        }
-
-        if (rotationError > 20.1f) {
-            //    Debug.Log($"Reconcile >> {Owner.ClientId}.  Rot error: {rotationError:F2} degrees.");
-            //motor.SetRotation(rd.Rotation);
-        }
-
-        // --- End Debug Comparison ---
-
-        // Update state
-        if (_currentCharacterState != rd.State) {
-            //   Debug.Log($"Character State mismatch  current: {_currentCharacterState} || RD State: {rd.State}");
-            // _currentCharacterState = rd.State;
-            SetState(rd.State);
-        }
-    }
-
-    private void Start() {
+    protected override void Start() {
+        base.Start();
         currentGravity = initialGravity;
+        if (ServerManager.Instance != null)
+        {
+             // OnStartClient logic moved here or called explicitly
+             SetupPlayerCharacter();
+        }
     }
 
-    private void Update() {
-        // Only the owner gathers input
-        if (!IsOwner)
-            return;
+    // --- Networking Implementation ---
 
-        if (Input.GetKeyDown(KeyCode.X)) motor.SetPosition(new Vector3(motor.TransientPosition.x + 2, motor.TransientPosition.y + 0.2f, motor.TransientPosition.z));
-
-        // Only gather input - don't process movement!
-        // Movement happens in TimeManager_OnTick
-        GatherInputForPrediction();
+    public override void OnServerInput(PlayerInputPacket input)
+    {
+        // Server authority: Apply input to movement
+        // TODO: Validate input here (anti-cheat)
+        ProcessInput(input);
+        
+        // Broadcast State
+        var state = new PlayerStatePacket
+        {
+            PlayerId = OwnerId,
+            Tick = input.Tick,
+            Position = motor.TransientPosition,
+            Rotation = motor.TransientRotation,
+            Velocity = motor.Velocity,
+            StateId = (byte)_currentCharacterState
+        };
+        
+        // Send state back to client (and others)
+        if (ServerManager.Instance != null)
+        {
+            ServerManager.Instance.BroadcastToAll(state, DeliveryMethod.Unreliable);
+        }
     }
 
-    /// <summary>
-    /// Gathers input and stores it in local variables
-    /// This runs every frame (Update) to capture all input
-    /// The actual movement happens in TimeManager_OnTick
-    /// </summary>
-    private void GatherInputForPrediction() {
-        if (!IsOwner)
-            return;
-        // Skip input if animation is locked
+    public override void OnClientState(PlayerStatePacket state)
+    {
+        if (IsLocalPlayer)
+        {
+            // Reconciliation Logic
+            // 1. Find the input corresponding to this state's tick
+            // 2. Compare local state at that tick with server state
+            // 3. If error > threshold, snap and replay inputs from Tick+1 to CurrentTick
+            
+             float positionError = Vector3.Distance(state.Position, motor.TransientPosition); // Simplified check, needs history buffer lookup
+             if (positionError > positionSnapThreshold)
+             {
+                 motor.SetPosition(state.Position, true);
+                 motor.SetRotation(state.Rotation);
+                 // Replay inputs...
+             }
+        }
+        else
+        {
+            // Proxy Interpolation
+            // Simply smooth move to the new state
+            motor.SetPosition(state.Position, true);
+            motor.SetRotation(state.Rotation);
+            CurrentCharacterState = (CharacterState)state.StateId;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (IsOwnedByServer)
+        {
+            // Server logic handled by input packets usually, or AI
+        }
+        else if (IsLocalPlayer)
+        {
+            // Client Prediction Loop
+            var input = GatherInputForPrediction();
+            ProcessInput(input); // Apply locally immediately
+            
+            // Send to server
+            if (ClientManager.Instance != null)
+            {
+                ClientManager.Instance.SendPacket(input, DeliveryMethod.ReliableOrdered);
+            }
+        }
+    }
+
+    // --- Input & Movement Logic ---
+
+    private PlayerInputPacket GatherInputForPrediction() {
+        var input = new PlayerInputPacket();
+        if (ClientManager.Instance != null)
+        {
+            input.Tick = ClientManager.Instance.CurrentTick;
+        }
+        
         if (animationLockManager != null && animationLockManager.ShouldBlockInput()) {
-            _lastHorizontal      = 0f;
-            _lastVertical        = 0f;
-            _lastJumpInput       = false;
-            _crouchTogglePressed = false;
-            return;
+            return input;
         }
 
-        // Handle vehicle input separately (not predicted)
+        // Handle vehicle input separately (not predicted for now)
         if (CurrentCharacterState == CharacterState.InVehicleDriver) {
-            GatherVehicleInput();
-            return;
+             // GatherVehicleInput(); // TODO: Add vehicle input packet
+             return input;
         }
 
         // Get joystick input
-        _lastHorizontal = UiManager.Instance.ultimateJoystick != null
+        input.Horizontal = UiManager.Instance.ultimateJoystick != null
                               ? UiManager.Instance.ultimateJoystick.HorizontalAxis
                               : 0f;
 
-        _lastVertical = UiManager.Instance.ultimateJoystick != null
+        input.Vertical = UiManager.Instance.ultimateJoystick != null
                             ? UiManager.Instance.ultimateJoystick.VerticalAxis
                             : 0f;
 
 #if UNITY_EDITOR || !UNITY_ANDROID
         // Keyboard override for testing
-        if (Input.GetKey(KeyCode.W)) _lastVertical   = 1f;
-        if (Input.GetKey(KeyCode.S)) _lastVertical   = -1f;
-        if (Input.GetKey(KeyCode.A)) _lastHorizontal = -1f;
-        if (Input.GetKey(KeyCode.D)) _lastHorizontal = 1f;
+        if (Input.GetKey(KeyCode.W)) input.Vertical   = 1f;
+        if (Input.GetKey(KeyCode.S)) input.Vertical   = -1f;
+        if (Input.GetKey(KeyCode.A)) input.Horizontal = -1f;
+        if (Input.GetKey(KeyCode.D)) input.Horizontal = 1f;
 
-        // Jump - GetKeyDown means "pressed this frame"
-        if (Input.GetKeyDown(KeyCode.Space))
-            _lastJumpInput = true;
-
-        // Crouch toggle
-        if (Input.GetKeyDown(KeyCode.C))
-            _crouchTogglePressed = true;
+        if (Input.GetKeyDown(KeyCode.Space)) input.Jump = true;
+        if (Input.GetKeyDown(KeyCode.C)) input.Crouch = true;
 #endif
+
+        if (_crouchTogglePressed)
+        {
+            input.Crouch = true;
+            _crouchTogglePressed = false;
+        }
+
+        // Camera Yaw for rotation
+        if (orbitCamera != null)
+             input.CameraYaw = orbitCamera.transform.eulerAngles.y;
+
+        return input;
     }
 
-    private void ProcessReplicatedInput(ReplicateData md) {
+    private void ProcessInput(PlayerInputPacket input) {
         // Handle jump input
-        if (md.Jump) {
+        if (input.Jump) {
             SetJumpInput(true);
         }
 
         // Handle crouch toggle
-        if (md.Crouch) {
+        if (input.Crouch) {
             ToggleCrouch();
         }
 
-        // STORE the replicated camera rotation for use in UpdateRotation
-        _replicatedCameraRotation = md.CamRotation;
+        // Reconstruct rotation from Yaw
+        _replicatedCameraRotation = Quaternion.Euler(0, input.CameraYaw, 0);
 
         // Calculate the camera's forward and right vectors
         var cameraForward = Vector3.ProjectOnPlane(_replicatedCameraRotation * Vector3.forward, motor.CharacterUp)
@@ -506,16 +320,18 @@ public class Character : TickNetworkBehaviour, ICharacterController {
                                  .normalized;
 
         // Calculate movement vector relative to camera
-        _moveInputVector = (cameraForward * md.Vertical + cameraRight * md.Horizontal).normalized;
+        _moveInputVector = (cameraForward * input.Vertical + cameraRight * input.Horizontal).normalized;
         _moveInputVector = Vector3.ClampMagnitude(_moveInputVector, 1f);
 
         // Set look direction to camera forward (for rotation)
-        _lookInputVector = cameraForward;
+        //_lookInputVector = cameraForward;
 
         // Update movement state based on input magnitude
         if (!animationLockManager.ShouldBlockInput()) {
-            UpdateMovementState(new Vector2(md.Horizontal, md.Vertical));
+            UpdateMovementState(new Vector2(input.Horizontal, input.Vertical));
         }
+        
+        // Simulate Physics Step (Manually calling KCC update/simulate could go here if separating from FixedUpdate)
     }
 
     #region Input Handling
@@ -523,25 +339,25 @@ public class Character : TickNetworkBehaviour, ICharacterController {
     /// <summary>
     /// Gathers vehicle control input
     /// </summary>
-    private void GatherVehicleInput() {
-        if (playerCar == null) return;
-
-        playerCar.controllerV4.fuelInput  = UiManager.Instance.GetInput(UiManager.Instance.gasButton);
-        playerCar.controllerV4.brakeInput = UiManager.Instance.GetInput(UiManager.Instance.brakeButton);
-        playerCar.controllerV4.steerInput = -UiManager.Instance.GetInput(UiManager.Instance.leftButton) + UiManager.Instance.GetInput(UiManager.Instance.rightButton);
-
-#if UNITY_EDITOR || !UNITY_ANDROID
-        // Keyboard override for vehicle
-        if (Input.GetKey(KeyCode.Space)) playerCar.controllerV4.handbrakeInput = 1f;
-        else playerCar.controllerV4.handbrakeInput                             = 0f;
-        if (Input.GetKey(KeyCode.Z)) playerCar.controllerV4.fuelInput  = 1f;
-        if (Input.GetKey(KeyCode.S)) playerCar.controllerV4.brakeInput = 1;
-        if (Input.GetKey(KeyCode.D)) playerCar.controllerV4.steerInput = 1;
-        if (Input.GetKey(KeyCode.Q)) playerCar.controllerV4.steerInput = -1;
-#endif
-
-        UpdateVehicleAnimation();
-    }
+    //private void GatherVehicleInput() {
+    //    if (playerCar == null) return;
+    //
+    //    playerCar.controllerV4.fuelInput  = UiManager.Instance.GetInput(UiManager.Instance.gasButton);
+    //    playerCar.controllerV4.brakeInput = UiManager.Instance.GetInput(UiManager.Instance.brakeButton);
+    //    playerCar.controllerV4.steerInput = -UiManager.Instance.GetInput(UiManager.Instance.leftButton) + UiManager.Instance.GetInput(UiManager.Instance.rightButton);
+    //
+    //#if UNITY_EDITOR || !UNITY_ANDROID
+    //    // Keyboard override for vehicle
+    //    if (Input.GetKey(KeyCode.Space)) playerCar.controllerV4.handbrakeInput = 1f;
+    //    else playerCar.controllerV4.handbrakeInput                             = 0f;
+    //    if (Input.GetKey(KeyCode.Z)) playerCar.controllerV4.fuelInput  = 1f;
+    //    if (Input.GetKey(KeyCode.S)) playerCar.controllerV4.brakeInput = 1;
+    //    if (Input.GetKey(KeyCode.D)) playerCar.controllerV4.steerInput = 1;
+    //    if (Input.GetKey(KeyCode.Q)) playerCar.controllerV4.steerInput = -1;
+    //#endif
+    //
+    //    UpdateVehicleAnimation();
+    //}
 
     #endregion
 
@@ -913,12 +729,6 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         }
     }
 
-    // And ADD this new method:
-    private void OnJumpButtonPressed() {
-        // Just set the flag, it will be read in GatherInputForPrediction
-        _lastJumpInput = true;
-    }
-
     #endregion
 
     #region Falling
@@ -1029,39 +839,39 @@ public class Character : TickNetworkBehaviour, ICharacterController {
         }
     }
 
-    private void ExitVehicle() {
-        if (playerCar is null || playerCarSeat is null) return;
-
-        motor.transform.parent     = null;
-        motor.transform.localScale = Vector3.one;
-        motor.SetPositionAndRotation(playerCarSeat.Value.exitpos.position, Quaternion.identity);
-        TogglePlayerCollisionDetection(true);
-        motor.enabled = true;
-
-        if (!playerCar.controllerV4.engineRunning)
-            StopCoroutine(playerCar.controllerV4.StartEngineDelayed());
-
-        if (playerCarSeat.Value.isDriver) {
-            playerCar.controllerV4.KillEngine();
-            playerCar.driverSeat.used = false;
-        }
-
-        playerCar.controllerV4.handbrakeInput = 1f;
-        playerCarSeat.Value.FreetheSeat();
-        playerCarSeat = null;
-
-        navMeshAgent.enabled = false;
-        playerCar.fx_CloseDoorSound();
-
-        if (orbitCamera.IgnoredColliders.Contains(playerCar.VehicleCollider))
-            orbitCamera.IgnoredColliders.Remove(playerCar.VehicleCollider);
-
-        UiManager.Instance.ShowControllerPage();
-        pa.FadeOutActionLayer();
-
-        invehicle             = false;
-        CurrentCharacterState = CharacterState.Idle;
-    }
+    //private void ExitVehicle() {
+    //    if (playerCar is null || playerCarSeat is null) return;
+    //
+    //    motor.transform.parent     = null;
+    //    motor.transform.localScale = Vector3.one;
+    //    motor.SetPositionAndRotation(playerCarSeat.Value.exitpos.position, Quaternion.identity);
+    //    TogglePlayerCollisionDetection(true);
+    //    motor.enabled = true;
+    //
+    //    if (!playerCar.controllerV4.engineRunning)
+    //        StopCoroutine(playerCar.controllerV4.StartEngineDelayed());
+    //
+    //    if (playerCarSeat.Value.isDriver) {
+    //        playerCar.controllerV4.KillEngine();
+    //        playerCar.driverSeat.used = false;
+    //    }
+    //
+    //    playerCar.controllerV4.handbrakeInput = 1f;
+    //    playerCarSeat.Value.FreetheSeat();
+    //    playerCarSeat = null;
+    //
+    //    navMeshAgent.enabled = false;
+    //    playerCar.fx_CloseDoorSound();
+    //
+    //    if (orbitCamera.IgnoredColliders.Contains(playerCar.VehicleCollider))
+    //        orbitCamera.IgnoredColliders.Remove(playerCar.VehicleCollider);
+    //
+    //    UiManager.Instance.ShowControllerPage();
+    //    pa.FadeOutActionLayer();
+    //
+    //    invehicle             = false;
+    //    CurrentCharacterState = CharacterState.Idle;
+    //}
 
     private void UpdateVehicleAnimation() {
         if (playerCar != null && playerCar.controllerV4 != null) {
@@ -1129,38 +939,11 @@ public class Character : TickNetworkBehaviour, ICharacterController {
 
     #region Network Setup
 
-    public override void OnStartClient() {
-        SetupPlayerCharacter();
-        if (IsOwner)
-            GameManager.Instance.PlayerSpawnedEventDispatcher();
-        // if (UiManager.Instance != null) {
-        //     UiManager.Instance.ShowControllerPage();
-        // }
-    }
-
-    public override void OnStopClient() {
-        base.OnStopClient();
-        if (IsOwner && GameManager.Instance != null)
-            GameManager.Instance.EnableMainCamera();
-    }
-
-    public override void OnStartServer() {
-        base.OnStartServer();
-        bool isHostPlayer = Owner.IsLocalClient;
-        if (orbitCamera != null && !isHostPlayer) {
-            Destroy(orbitCamera.gameObject);
-        }
-
-        gameObject.name = ">Server::NET_PLAYER__" + Owner.ClientId;
-    }
-
     private void SetupPlayerCharacter() {
-        if (!IsOwner) {
+        if (!IsLocalPlayer) {
             if (orbitCamera != null) {
                 Destroy(orbitCamera.gameObject);
             }
-
-            gameObject.name = "NET_PLAYER__" + Owner.ClientId;
         }
 
         else {
@@ -1182,15 +965,21 @@ public class Character : TickNetworkBehaviour, ICharacterController {
             UiManager.Instance.SetupEventListeners();
 
             GameManager.Instance.DisableMainCamera();
+            GameManager.Instance.PlayerSpawnedEventDispatcher();
         }
+    }
+
+    private void OnJumpButtonPressed() {
+         // Logic for jump button
     }
 
     private void OnCrouchPressed() {
         _crouchTogglePressed = true;
     }
 
-    private void OnDestroy() {
-        if (IsOwner && UiManager.Instance != null) {
+    protected override void OnDestroy() {
+        base.OnDestroy();
+        if (IsLocalPlayer && UiManager.Instance != null) {
             UiManager.Instance.OnCardoorDriverButtonClicked    -= OnCardoorDriverClicked;
             UiManager.Instance.OnCardoorPassangerButtonClicked -= OnCardoorPassangerClicked;
             UiManager.Instance.OnCardoorExitButtonClicked      -= OnCardoorExitClicked;

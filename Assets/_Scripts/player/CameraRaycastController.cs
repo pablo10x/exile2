@@ -1,5 +1,4 @@
-﻿using FishNet.Object;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using Sirenix.OdinInspector;
 using System;
@@ -10,7 +9,7 @@ using System;
 /// Only runs on the local player (owner).
 /// </summary>
 [DisallowMultipleComponent]
-public class CameraRaycastController : NetworkBehaviour 
+public class CameraRaycastController : MonoBehaviour 
 {
     #region Events
     
@@ -147,16 +146,16 @@ public class CameraRaycastController : NetworkBehaviour
         SubscribeToCharacterEvents();
     }
 
-    public override void OnStartClient() 
+    public void OnStartClient() 
     {
-        base.OnStartClient();
+        //base.OnStartClient();
         
         // Only run for local player to avoid unnecessary processing
-        if (!base.IsOwner)
-        {
-            enabled = false;
-            return;
-        }
+        //if (!base.IsOwner)
+        //{
+        //    enabled = false;
+        //    return;
+        //}
         
         InitializeController();
     }
@@ -169,7 +168,8 @@ public class CameraRaycastController : NetworkBehaviour
     private void LateUpdate() 
     {
         // Early exit if not owner or missing references
-        if (!base.IsOwner || !ValidateRuntimeReferences()) return;
+        //if (!base.IsOwner || !ValidateRuntimeReferences()) return;
+        if (!ValidateRuntimeReferences()) return;
 
         UpdateRaycast();
         UpdateTargetPosition();
@@ -377,7 +377,8 @@ public class CameraRaycastController : NetworkBehaviour
     /// </summary>
     public void ForceInteractableCheck()
     {
-        if (!base.IsOwner || !ValidateRuntimeReferences()) return;
+        //if (!base.IsOwner || !ValidateRuntimeReferences()) return;
+        if (!ValidateRuntimeReferences()) return;
         
         _frameCounter = UpdateInterval; // Force next update
         PerformRaycast();

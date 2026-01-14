@@ -52,7 +52,7 @@ public class ItemManagerEditor : OdinMenuEditorWindow
             {
                 ForceMenuTreeRebuild();
             }
-            
+
             GUILayout.FlexibleSpace();
 
             if (SirenixEditorGUI.ToolbarButton("Create New Item"))
@@ -82,10 +82,13 @@ public class ItemManagerEditor : OdinMenuEditorWindow
 
         AssetDatabase.CreateAsset(newItem, fullPath);
         AssetDatabase.SaveAssets();
-        
+
         // Select the new item in the project
         EditorUtility.FocusProjectWindow();
         Selection.activeObject = newItem;
+
+
+
 
         // Rebuild the menu tree to include the new item
         ForceMenuTreeRebuild();

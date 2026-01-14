@@ -1,26 +1,24 @@
 ﻿using Exile.Inventory;
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
 using UnityEngine;
 
-public class ItemPickup : NetworkBehaviour, IInteractable
+public class ItemPickup : MonoBehaviour, IInteractable
 {
     public ItemBase item;
     
     [SerializeField] private ItemDatabase _database;
     [SerializeField] private SpriteRenderer _visualRenderer;
     
-    private readonly SyncVar<int> _syncedItemId = new SyncVar<int>();
+    private int _syncedItemId;
 
     private void Awake() {
-        _syncedItemId.OnChange += OnItemIdChanged;
+        //_syncedItemId.OnChange += OnItemIdChanged;
         if (_visualRenderer == null) _visualRenderer = GetComponentInChildren<SpriteRenderer>();
     }
 
     public void SetItem(ItemBase newItem) {
         if (newItem == null) return;
         item = newItem;
-        _syncedItemId.Value = newItem.Id;
+        _syncedItemId = newItem.Id;
         UpdateVisuals();
     }
 
@@ -39,10 +37,10 @@ public class ItemPickup : NetworkBehaviour, IInteractable
         }
     }
 
-    public override void OnStartClient() {
-        base.OnStartClient();
-        if (_syncedItemId.Value != 0 && item == null && _database != null) {
-             item = _database.GetItem(_syncedItemId.Value);
+    public void OnStartClient() {
+        //base.OnStartClient();
+        if (_syncedItemId != 0 && item == null && _database != null) {
+             item = _database.GetItem(_syncedItemId);
              UpdateVisuals();
         }
     }

@@ -1,5 +1,4 @@
 ﻿using Exile.Inventory.Examples;
-using FishNet.Object;
 using Salvage.ClothingCuller.Components;
 using UnityEngine;
 
@@ -13,7 +12,7 @@ namespace core.player {
         Suit
     }
 
-    public class CharacterEquipmentManager : NetworkBehaviour {
+    public class CharacterEquipmentManager : MonoBehaviour {
 
         [SerializeField] private Occludee       body;
         [SerializeField] private ClothingCuller _clothingCuller;
@@ -21,8 +20,8 @@ namespace core.player {
    
       
 
-        public override void OnStartClient() {
-            base.OnStartClient();
+        public void OnStartClient() {
+            //base.OnStartClient();
          
             _clothingCuller.Register(body, false);
 

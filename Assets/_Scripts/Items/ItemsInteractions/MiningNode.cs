@@ -1,16 +1,14 @@
 ﻿using core.Managers;
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
 using UnityEngine;
 
 
 public enum NodeType {
     stone,copper,ti,iron,silver,gold
 }
-public class MiningNode : NetworkBehaviour , IInteractable
+public class MiningNode : MonoBehaviour , IInteractable
 {
     
-    private readonly SyncVar<int> quantity = new SyncVar<int>();
+    private int quantity;
 
 
 
@@ -24,16 +22,16 @@ public class MiningNode : NetworkBehaviour , IInteractable
 
     private void Start()
     {
-        quantity.OnChange += OnQuantityChanged;
+        //quantity.OnChange += OnQuantityChanged;
         
     }
 
-    public override void OnStartServer() {
-        base.OnStartServer();
+    public void OnStartServer() {
+        //base.OnStartServer();
 
         switch (nodeType) {
             case NodeType.stone:
-                quantity.Value = _globalDataSo.stone_maxQuantity;
+                quantity = _globalDataSo.stone_maxQuantity;
                 miningCooldown = _globalDataSo.stone_coolDown;
                 respawnTimer = _globalDataSo.stone_respawnTime;
                 break;
@@ -43,32 +41,32 @@ public class MiningNode : NetworkBehaviour , IInteractable
     }
 
     // Called when a player interacts with this node
-    public void TryMine(NetworkObject player)
+    public void TryMine(object player)
     {
         // Only execute on server
-        if (!base.IsServerStarted) return;
+        //if (!base.IsServerStarted) return;
         
         // Check cooldown
         if (Time.time - lastMineTime < miningCooldown) return;
         
         // Check if node has resources
-        if (quantity.Value <= 0)
+        if (quantity <= 0)
         {
             Debug.Log("Mining node is depleted!");
             return;
         }
         
         // Mine the resource
-        quantity.Value--;
+        quantity--;
         lastMineTime = Time.time;
         
-        Debug.Log($"Mined! Remaining quantity: {quantity.Value}");
+        Debug.Log($"Mined! Remaining quantity: {quantity}");
         
         // Optionally give resource to player
         // player.GetComponent<PlayerInventory>()?.AddResource(ResourceType.Ore, 1);
         
         // If depleted, handle accordingly
-        if (quantity.Value <= 0)
+        if (quantity <= 0)
         {
             OnNodeDepleted();
         }
@@ -88,12 +86,12 @@ public class MiningNode : NetworkBehaviour , IInteractable
  
     private void RespawnNode()
     {
-        if (base.IsServerStarted)
-        {
+        //if (base.IsServerStarted)
+        //{
             Debug.Log($"node respawned!");
             transform.localScale = Vector3.one;
-            quantity.Value = maxQuantity;
-        }
+            quantity = maxQuantity;
+        //}
     }
 
     // Called when quantity changes (on all clients)
@@ -107,7 +105,7 @@ public class MiningNode : NetworkBehaviour , IInteractable
     {
         // Update the visual appearance based on quantity
         // For example, change material, scale, or particle effects
-        float scale = Mathf.Lerp(0.5f, 1f, (float)quantity.Value / maxQuantity);
+        float scale = Mathf.Lerp(0.5f, 1f, (float)quantity / maxQuantity);
         transform.localScale = Vector3.one * scale;
     }
 
@@ -126,25 +124,25 @@ public class MiningNode : NetworkBehaviour , IInteractable
     }
 
     // Client requests to mine (sends to server)
-    [ServerRpc(RequireOwnership = false)]
-    private void RequestMine(NetworkObject player)
+    
+    private void RequestMine(object player)
     {
         TryMine(player);
     }
 
-    private NetworkObject FindLocalPlayer()
+    private object FindLocalPlayer()
     {
         // Find the local player's NetworkObject
-        foreach (var conn in base.NetworkManager.ClientManager.Clients.Values)
-        {
-            foreach (var obj in conn.Objects)
-            {
-                if (obj.IsOwner)
-                {
-                    return obj;
-                }
-            }
-        }
+        //foreach (var conn in base.NetworkManager.ClientManager.Clients.Values)
+        //{
+        //    foreach (var obj in conn.Objects)
+        //    {
+        //        if (obj.IsOwner)
+        //        {
+        //            return obj;
+        //        }
+        //    }
+        //}
         return null;
     }
 

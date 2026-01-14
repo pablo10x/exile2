@@ -68,6 +68,7 @@ namespace core.Managers {
 
             if (operation > 200) {
                 infotext.text = $"Preparing game data...\n{helper.SizeSuffix (operation)}";
+                
             }
 
            

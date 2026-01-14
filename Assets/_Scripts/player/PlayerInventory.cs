@@ -2,11 +2,10 @@ using core.player;
 using Exile.Inventory;
 using Exile.Inventory.Examples;
 using Exile.Inventory.Network;
-using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-public class PlayerInventory : NetworkBehaviour {
+public class PlayerInventory : MonoBehaviour {
     [SerializeField] private CharacterEquipmentManager equipmentManager;
 
     public ItemDatabase itemDatabase;
@@ -16,8 +15,8 @@ public class PlayerInventory : NetworkBehaviour {
 
     private void Awake() { }
 
-    public override void OnStartServer() {
-        base.OnStartServer();
+    public void OnStartServer() {
+        //base.OnStartServer();
 
         // Server side: only handle server logic here.
         // // Do NOT touch InventoryUIManager (client-only) here.
@@ -28,21 +27,21 @@ public class PlayerInventory : NetworkBehaviour {
         //     if (Owner.IsValid) {
         //         var itemsdata = BodyInventory.ConvertItemsToNetworkItems();
         //         var inv       = new NetWorkedInventoryData(BodyInventory.Inventory.NetworkInventoryId, BodyInventory.Inventory.height, BodyInventory.Inventory.width, itemsdata);
-        //         
-        //         
-        //         
+        //
+        //
+        //
         //         //Target_InventoryInitialized(base.Owner, inv);
         //     }
         // };
     }
 
-    
-    
 
-    public override void OnStartClient() {
-        base.OnStartClient();
+
+
+    public void OnStartClient() {
+        //base.OnStartClient();
 // Only build UI for the local player
-        if (!IsOwner) return;
+        //if (!IsOwner) return;
         if (BodyInventory == null) {
             Debug.LogWarning("[CLIENT] PlayerInventory: BodyInventory reference is null.");
             return;
@@ -60,7 +59,7 @@ public class PlayerInventory : NetworkBehaviour {
 
 // Runs on client, for the local player, when BodyInventory.Inventory is ready.
     private void HandleBodyInventoryInitializedClient() {
-        if (!IsOwner) return; // safety
+        //if (!IsOwner) return; // safety
 
         var invManager = BodyInventory.Inventory;
         if (invManager == null) {
@@ -79,7 +78,7 @@ public class PlayerInventory : NetworkBehaviour {
         // InventoryUIManager.Instance.AddBaseCharacterInventory(invManager);
     }
 
-   
+
 
 
     [Button("Test equip ")]

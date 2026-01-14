@@ -1,5 +1,4 @@
-﻿using FishNet.Object;
-using UnityEngine;
+﻿using UnityEngine;
 using Sirenix.OdinInspector;
 
 /// <summary>
@@ -8,7 +7,7 @@ using Sirenix.OdinInspector;
 /// Only runs on the local player (owner).
 /// </summary>
 [DisallowMultipleComponent]
-public class PlayerInteraction : NetworkBehaviour 
+public class PlayerInteraction : MonoBehaviour 
 {
     #region Inspector Fields
     
@@ -62,16 +61,16 @@ public class PlayerInteraction : NetworkBehaviour
         ValidateReferences();
     }
 
-    public override void OnStartClient() 
+    public void OnStartClient() 
     {
-        base.OnStartClient();
+        //base.OnStartClient();
 
         // Only enable for local player
-        if (!base.IsOwner) 
-        {
-            enabled = false;
-            return;
-        }
+        //if (!base.IsOwner) 
+        //{
+        //    enabled = false;
+        //    return;
+        //}
         
         SubscribeToRaycastEvents();
     }
@@ -83,7 +82,7 @@ public class PlayerInteraction : NetworkBehaviour
 
     private void Update() 
     {
-        if (!base.IsOwner) return;
+        //if (!base.IsOwner) return;
 
         HandleInteractionInput();
     }
@@ -205,7 +204,7 @@ public class PlayerInteraction : NetworkBehaviour
     
     #region Server RPCs
     
-    [ServerRpc]
+    
     private void ServerMineNode(MiningNode node)
     {
         if (node == null)
@@ -215,15 +214,15 @@ public class PlayerInteraction : NetworkBehaviour
         }
         
         // Server processes the mining request
-        node.TryMine(base.NetworkObject);
+        //node.TryMine(base.NetworkObject);
     }
 
-    [ServerRpc]
+    
     private void ServerPickupItem(ItemPickup itemPickup)
     {
         if (itemPickup == null || itemPickup.gameObject == null)
         {
-            Debug.LogWarning($"[{nameof(PlayerInteraction)}] Server received null or destroyed item pickup request from player {Owner.ClientId}.");
+            //Debug.LogWarning($"[{nameof(PlayerInteraction)}] Server received null or destroyed item pickup request from player {Owner.ClientId}.");
             return;
         }
 
@@ -234,7 +233,7 @@ public class PlayerInteraction : NetworkBehaviour
         {
             if (enableDebugLogs)
             {
-                Debug.LogWarning($"[{nameof(PlayerInteraction)}] Player {Owner.ClientId} tried to pick up item '{itemPickup.item.name}' from too far away! Distance: {distance}");
+                //Debug.LogWarning($"[{nameof(PlayerInteraction)}] Player {Owner.ClientId} tried to pick up item '{itemPickup.item.name}' from too far away! Distance: {distance}");
             }
             return; // Reject the request
         }
