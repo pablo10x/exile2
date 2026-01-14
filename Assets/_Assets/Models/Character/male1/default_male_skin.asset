@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98da3ed5aa66b084498aaf7b76bbba8d, type: 3}
+  m_Name: default_male_skin
+  m_EditorClassIdentifier: 
+  SkinID: 1
+  CharacterGender: 0
+  skinMaterial: {fileID: 2100000, guid: a0719b6aa25211e42a693e6a4a37530c, type: 2}
+  CharacterThumbnail: {fileID: 21300000, guid: 35fc22c520c90d34398d1686a841370f, type: 3}
+  Head: {fileID: 7351203097864821859, guid: e80570d7427c37f40ad226157b0d90fb, type: 3}
+  Neck: {fileID: 3553994595632589294, guid: e80570d7427c37f40ad226157b0d90fb, type: 3}
+  UpperBody: {fileID: 2971416257270049244, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  RightShoulder: {fileID: -5754490056110248197, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  RightArm: {fileID: -3165235955947291559, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  RightHand: {fileID: -6930465664821684777, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  LeftShoulder: {fileID: 8982077339052745269, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  LeftArm: {fileID: 1776454815891467217, guid: e80570d7427c37f40ad226157b0d90fb, type: 3}
+  LeftHand: {fileID: -8920067614994534983, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  LowerBody: {fileID: -5554170861899876540, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  LowerBodyShort: {fileID: 7170104208821184242, guid: e80570d7427c37f40ad226157b0d90fb,
+    type: 3}
+  Feet: {fileID: 4655878349931133656, guid: e80570d7427c37f40ad226157b0d90fb, type: 3}

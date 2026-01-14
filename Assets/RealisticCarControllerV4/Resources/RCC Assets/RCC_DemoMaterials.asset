@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e163df8e2f417a741bc43cd77db7442c, type: 3}
+  m_Name: RCC_DemoMaterials
+  m_EditorClassIdentifier: 
+  demoMaterials:
+  - {fileID: 2100000, guid: 9743fbb1a57c36d44b2239a904277e92, type: 2}
+  - {fileID: 2100000, guid: 730e3b53393c2d244a1bf2724ae33055, type: 2}
+  - {fileID: 2100000, guid: 5c1dffe13e273bb4bab6ecf77b05271a, type: 2}
+  - {fileID: 2100000, guid: c20aa70ce1c69e846964c397237bb686, type: 2}
+  - {fileID: 2100000, guid: 3daa9d3919a99444fb9c089c3ae0f7ea, type: 2}
+  - {fileID: 2100000, guid: 2ac175239b6f5454882a9c3ec2471f03, type: 2}
+  demoVehicleMaterials:
+  - {fileID: 2100000, guid: 6c47488beba81ee4883ddccb47468247, type: 2}
+  builtInShaderName: RCC_Shader_CarBody
+  urpShaderName: RCC_Shader_CarBody_URP

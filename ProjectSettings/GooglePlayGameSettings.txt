@@ -1,0 +1,11 @@
+lastUpgrade=20100
+proj.pluginVersion=2.1.0
+proj.AppId=260149137019
+and.BundleId=com.blazepunch.cnr
+proj.classDir=Assets
+proj.ConstantsClassName=GPGSIds
+and.ResourceData=%3c%3fxml+version%3d%221.0%22+encoding%3d%22utf-8%22%3f%3e%0d%0a%3c%21--Google+Play+game+services+IDs.+Save+this+file+as+res%2fvalues%2fgames-ids.xml+in+your+project.--%3e%0d%0a%3cresources%3e%0d%0a++%3c%21--app_id--%3e%0d%0a++%3cstring+name%3d%22app_id%22+translatable%3d%22false%22%3e260149137019%3c%2fstring%3e%0d%0a++%3c%21--package_name--%3e%0d%0a++%3cstring+name%3d%22package_name%22+translatable%3d%22false%22%3ecom.blazepunch.cnr%3c%2fstring%3e%0d%0a++%3c%21--achievement+first+login--%3e%0d%0a++%3cstring+name%3d%22achievement_first_login%22+translatable%3d%22false%22%3eCgkI-5zjkMkHEAIQAQ%3c%2fstring%3e%0d%0a%3c%2fresources%3e
+and.ClientId=260149137019-vqaf909f2rsjpe4e7esqovkhgt663m1j.apps.googleusercontent.com
+android.SetupDone=true
+App.NearbdServiceId=com.ecore.exile
+android.NearbySetupDone=true

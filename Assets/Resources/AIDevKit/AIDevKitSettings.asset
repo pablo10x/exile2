@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db3500993f075264ab16790008e163ae, type: 3}
+  m_Name: AIDevKitSettings
+  m_EditorClassIdentifier: 
+  outputPath: C:/Users/pab/AppData/LocalLow/eCore/Exile/Generated
+  chatSavePath: 
+  savePromptHistoryOnRuntime: 1
+  allowUserApiKeys: 1
+  logLevel: 2
+  requestTimeout: 30
+  measureLatencyByDefault: 0
+  defaultLLM: gpt-4o
+  defaultIMG: gpt-image-1
+  defaultTTS: tts-1
+  defaultSTT: whisper-1
+  defaultEMB: text-embedding-3-small
+  defaultMOD: omni-moderation-latest
+  defaultVID: models/veo-2.0-generate-001
+  defaultVoice: alloy
+  defaultAgentModel: gpt-4o
+  defaultAgentVoice: alloy
+  debugMode: 0

@@ -1,0 +1,24 @@
+//----------------------------------------------
+//            Realistic Car Controller
+//
+// Copyright © 2014 - 2025 BoneCracker Games
+// https://www.bonecrackergames.com
+// Ekrem Bugra Ozdoganlar
+//
+//----------------------------------------------
+
+
+using UnityEngine;
+
+/// <summary>
+/// Locks rotation of the shadow projector to avoid stretching.
+/// </summary>
+public class RCC_ShadowRotConst : RCC_Core {
+
+    private void Update() {
+
+        transform.rotation = Quaternion.Euler(90f, CarController.transform.eulerAngles.y, 0f);
+
+    }
+
+}

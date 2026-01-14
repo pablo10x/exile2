@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f62d604cf81c1f43a5eec8593ee379d, type: 3}
+  m_Name: packageInfo_LevelLoader
+  m_EditorClassIdentifier: 
+  toolName: Level Loader
+  toolDescription: Specify levels and locations throughout your whole game world.
+    Quickly load required scenes during runtime and edit mode.
+  assetStoreLink: https://assetstore.unity.com/packages/slug/281070
+  menuItemPath: Window/FewClicks Dev/Level Loader
+  isFree: 0
+  toolIcon: {fileID: 2800000, guid: d8523a8ef4affcf48bd2c782e240e241, type: 3}
+  toolMainColor: {r: 0.24313726, g: 0.54901963, b: 0.63529414, a: 1}

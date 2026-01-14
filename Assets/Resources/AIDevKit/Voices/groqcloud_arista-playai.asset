@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47631a6ed874d39458f1662804e83e49, type: 3}
+  m_Name: groqcloud_arista-playai
+  m_EditorClassIdentifier: 
+  id: Arista-PlayAI
+  displayName: Arista
+  api:
+    _value: GroqCloud
+  deprecated: 0
+  custom: 0
+  locked: 0
+  locale:
+    cultureCode: en-US
+  gender: 2
+  age: 2

@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a70c6d54bc155e4bb0f350c53ead0c2, type: 3}
+  m_Name: ModelCatalog
+  m_EditorClassIdentifier: 
+  data:
+    rid: 6068685212012773459
+  references:
+    version: 2
+    RefIds:
+    - rid: 6068685212012773459
+      type: {class: ModelCatalog/Repo, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        serializedList:
+        - key: claude-sonnet-4-20250514
+          value: {fileID: 11400000, guid: 17f638c80e7ddb647838da946245c552, type: 2}
+        - key: deepseek-chat
+          value: {fileID: 11400000, guid: 7a8b8b5bb53bdaa488b205a2f0c06d2e, type: 2}
+        - key: deepseek-reasoner
+          value: {fileID: 11400000, guid: 74c41f8a04e9d9143aadcf09ba12d28e, type: 2}
+        - key: eleven_english_sts_v2
+          value: {fileID: 11400000, guid: 0819d859a6a87454e83b150a7bf14516, type: 2}
+        - key: eleven_flash_v2_5
+          value: {fileID: 11400000, guid: d56e7ad228a52c842a80ca6355676ef9, type: 2}
+        - key: eleven_soundfx
+          value: {fileID: 11400000, guid: 501b98f223dd72646975dae9372012ed, type: 2}
+        - key: scribe_v1
+          value: {fileID: 11400000, guid: 15e13a4a2aefa86499d44117f144be42, type: 2}
+        - key: models/embedding-001
+          value: {fileID: 11400000, guid: f898e9ae4199e874f85e342cc7abc518, type: 2}
+        - key: models/gemini-2.0-flash-preview-image-generation
+          value: {fileID: 11400000, guid: f7ca3eaeda8d1f147ab8091670725904, type: 2}
+        - key: models/gemini-2.0-flash
+          value: {fileID: 11400000, guid: f7da541054081164bae5be0f3a127d07, type: 2}
+        - key: models/gemini-2.5-flash-preview-tts
+          value: {fileID: 11400000, guid: 924d7ba76b6fe5f4cb76273e89828b20, type: 2}
+        - key: models/veo-2.0-generate-001
+          value: {fileID: 11400000, guid: 1e4513e6883897c45890fe9e3b695682, type: 2}
+        - key: dall-e-2
+          value: {fileID: 11400000, guid: 54d6c1cbff1fa9d4d97090ee56b1dbc8, type: 2}
+        - key: dall-e-3
+          value: {fileID: 11400000, guid: 006d35b80b7fc5e409a2bf03a6e46104, type: 2}
+        - key: gpt-4o-mini
+          value: {fileID: 11400000, guid: 6edb99fe1eaea3d4ea5ab594bc8f7229, type: 2}
+        - key: gpt-4o-realtime-preview
+          value: {fileID: 11400000, guid: 38fb4542dba295544b8b55f8e61da879, type: 2}
+        - key: gpt-4o
+          value: {fileID: 11400000, guid: 6cadd19c7dfa78a4db93f4ab72311912, type: 2}
+        - key: gpt-image-1
+          value: {fileID: 11400000, guid: b23e283cabe294149926cf62e673ddbd, type: 2}
+        - key: omni-moderation-latest
+          value: {fileID: 11400000, guid: 1fba911006f3b74408f9e4d93ff11bc1, type: 2}
+        - key: text-embedding-3-small
+          value: {fileID: 11400000, guid: 18009283784dae2418d8e16af2ce1be0, type: 2}
+        - key: tts-1
+          value: {fileID: 11400000, guid: 95134614412b13b4799c1eb1d7989501, type: 2}
+        - key: whisper-1
+          value: {fileID: 11400000, guid: 641a93f1cf3ca11498e11e51234b3655, type: 2}
+        - key: google/gemini-3-pro-preview
+          value: {fileID: 11400000, guid: 7dee1849fa08d664093d712597893bcf, type: 2}
+        - key: google/gemini-2.5-pro
+          value: {fileID: 11400000, guid: 857a42b50a9926946ab6265b0870701f, type: 2}

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 53
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6d07ed55feef094099fc1c3c720dc7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  model: 
+  lastModel: gpt-4o-mini
+  user_Timestamp: 0
+  user_EditButton: 0
+  assistant_Timestamp: 0
+  assistant_CopyButton: 0
+  assistant_Usage: 0
+  showUsageTracking: 0
+  logLevel: 0
+  disableStream: 0
+  maxStackTraceLength: 0
+  speechModel: tts-1
+  speechVoice: alloy
+  enableTitleBar: 0
+  enableDebugToolbar: 0
+  uiSize: 0
+  charsPerTick: 5
+  tickMs: 30
+  tickSound: {fileID: 0}

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f62d604cf81c1f43a5eec8593ee379d, type: 3}
+  m_Name: packageInfo_ColorTextureGenerator
+  m_EditorClassIdentifier: 
+  toolName: Color Texture Generator
+  toolDescription: Generate color textures that can be used in UI, shaders, or scripts
+    to achieve various effects. Save results in scriptable objects to easily modify
+    them in the future.
+  assetStoreLink: https://assetstore.unity.com/packages/slug/281099
+  menuItemPath: Window/FewClicks Dev/Color Texture Generator
+  isFree: 1
+  toolIcon: {fileID: 2800000, guid: 53e12b2a20f247a458a19332b4ea8696, type: 3}
+  toolMainColor: {r: 0.5568628, g: 0.37254903, b: 0.7254902, a: 1}

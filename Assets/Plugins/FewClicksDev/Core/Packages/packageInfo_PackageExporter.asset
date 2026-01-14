@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f62d604cf81c1f43a5eec8593ee379d, type: 3}
+  m_Name: packageInfo_PackageExporter
+  m_EditorClassIdentifier: 
+  toolName: Package Exporter
+  toolDescription: With the help of this tool, you will be able to automate the packaging
+    process of your assets. This will save you some time and prevent mistakes.
+  assetStoreLink: https://assetstore.unity.com/packages/slug/310282
+  menuItemPath: Window/FewClicks Dev/Package Exporter
+  isFree: 1
+  toolIcon: {fileID: 2800000, guid: fc96e9842045595458352d0c9faf755c, type: 3}
+  toolMainColor: {r: 0.62352943, g: 0.16862746, b: 0.3372549, a: 1}

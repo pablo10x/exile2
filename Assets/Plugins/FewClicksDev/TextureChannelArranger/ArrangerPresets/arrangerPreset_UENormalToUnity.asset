@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12946d15ff5dcb4428dd92947d83406a, type: 3}
+  m_Name: arrangerPreset_UENormalToUnity
+  m_EditorClassIdentifier: 
+  displayName: UE normal map to Unity
+  description: Convert Unreal Engine tangent space normal map to the Unity's format.
+  priority: 0
+  inputs:
+  - reference: {fileID: 2800000, guid: fc6afb7fc8cae7e46b4606e3416a2540, type: 3}
+    textureName: Input
+    description: 
+    folderPath: 
+    addMode: 0
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  outputs:
+  - reference: {fileID: 0}
+    textureName: Output
+    description: 
+    exportMode: 0
+    fileToOverwrite: {fileID: 0}
+    fileName: 
+    filePath: Assets/
+    importMode: 2
+    customPreset: {fileID: 2655988077585873504, guid: 1a2f57a9706c5fa40b01c16bb4ee531f, type: 2}
+    exportNamingConvention: 0
+    exportName: 
+    exportPrefix: 
+    exportSuffix: 
+    connector: 
+    exportPath: 
+    channelSetups:
+    - Channel: 0
+      Source: 1
+      TextureSetup: Input
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0
+    - Channel: 1
+      Source: 1
+      TextureSetup: Input
+      ColorGrayscale: 0
+      InputChannel: 1
+      Invert: 1
+    - Channel: 2
+      Source: 1
+      TextureSetup: Input
+      ColorGrayscale: 0
+      InputChannel: 2
+      Invert: 0
+    - Channel: 3
+      Source: 0
+      TextureSetup: 
+      ColorGrayscale: 0
+      InputChannel: 3
+      Invert: 0

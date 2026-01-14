@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Default Local Group
+  m_EditorClassIdentifier: 
+  m_GroupName: Default Local Group
+  m_GUID: 3c8c0a750a18edd409df0c6fd993d724
+  m_SerializeEntries:
+  - m_GUID: 2b86430ca85dd154eb1cc9af94be5570
+    m_Address: Assets/_Assets/audio/Cars/door opening and closing/door_close1.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0a8bb43e20f7d646bb0e557c1c0aa9b
+    m_Address: Assets/_Assets/audio/Cars/door opening and closing/Opening Door_6.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 64884e639a27ea44f86a5a0dc04c6286, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: d93c0c1c6f929fc4fa2c812d93c2589d, type: 2}
+    - {fileID: 11400000, guid: d3f238c0735d3d84794f1757b9ae3d17, type: 2}

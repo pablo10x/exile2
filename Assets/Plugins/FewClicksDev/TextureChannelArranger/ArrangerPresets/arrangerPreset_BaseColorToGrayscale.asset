@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12946d15ff5dcb4428dd92947d83406a, type: 3}
+  m_Name: arrangerPreset_BaseColorToGrayscale
+  m_EditorClassIdentifier: 
+  displayName: Base color to grayscale
+  description: Convert RGB texture to the single channel grayscale.
+  priority: 155
+  inputs:
+  - reference: {fileID: 2800000, guid: eed52b438ce801848836d7d3d80da77e, type: 3}
+    isNormal: 0
+    isSRGB: 0
+    previewMask: 15
+    textureName: Base Color
+    description: 
+    folderPath: 
+    addMode: 1
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  outputs:
+  - reference: {fileID: 0}
+    isNormal: 0
+    isSRGB: 0
+    previewMask: 15
+    textureName: Grayscale
+    description: 
+    exportMode: 0
+    fileToOverwrite: {fileID: 0}
+    filePath: Assets/
+    importMode: 0
+    customPreset: {fileID: 2655988077585873504, guid: 6c5227a1e5fdb8643923a2c8073ffe9d, type: 2}
+    exportNamingConvention: 0
+    fileName: Output
+    exportName: Output
+    exportPrefix: 
+    exportSuffix: 
+    connector: 
+    exportPath: 
+    channelSetups:
+    - Channel: 0
+      Source: 1
+      TextureSetup: Base Color
+      ColorGrayscale: 0
+      InputChannel: 4
+      Invert: 0
+    - Channel: 1
+      Source: 0
+      TextureSetup: None
+      ColorGrayscale: 0.358209
+      InputChannel: 1
+      Invert: 0
+    - Channel: 2
+      Source: 0
+      TextureSetup: None
+      ColorGrayscale: 0
+      InputChannel: 3
+      Invert: 0
+    - Channel: 3
+      Source: 0
+      TextureSetup: None
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0

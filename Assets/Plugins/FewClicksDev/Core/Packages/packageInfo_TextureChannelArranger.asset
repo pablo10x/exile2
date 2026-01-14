@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f62d604cf81c1f43a5eec8593ee379d, type: 3}
+  m_Name: packageInfo_TextureChannelArranger
+  m_EditorClassIdentifier: 
+  toolName: Texture Channel Arranger
+  toolDescription: With the help of this tool you will be able to create or adjust
+    textures and masks to your current shader pipeline.
+  assetStoreLink: https://assetstore.unity.com/packages/slug/285287
+  menuItemPath: Window/FewClicks Dev/Texture Channel Arranger
+  toolIcon: {fileID: 2800000, guid: 94189f5a98fb2134a8cdcba5b89da6b7, type: 3}
+  toolMainColor: {r: 0.13955145, g: 0.6037736, b: 0.51756096, a: 1}

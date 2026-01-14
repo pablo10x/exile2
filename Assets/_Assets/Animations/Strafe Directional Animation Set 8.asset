@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b5b6ac0c7ebd7b41b307d920db7b245, type: 3}
+  m_Name: Strafe Directional Animation Set 8
+  m_EditorClassIdentifier: 
+  _Up: {fileID: 7400000, guid: 77658b01444d5da4fa88bcb6ed0aaa9d, type: 2}
+  _Right: {fileID: 7400000, guid: 61b1883cdc7ee9d45b73d917c48e709e, type: 2}
+  _Down: {fileID: 7400000, guid: 2e06a4ee4b6ecdb4aa5c03c90c475e5f, type: 2}
+  _Left: {fileID: 7400000, guid: bc75a074328e6b5439ef80237c801ae4, type: 2}
+  _UpRight: {fileID: 7400000, guid: 672ea9ab77b3ea54fb699601dd56fe3a, type: 2}
+  _DownRight: {fileID: 7400000, guid: dc80c56c2816484448069d4c8a891962, type: 2}
+  _DownLeft: {fileID: 7400000, guid: 612ecd939d3859145845b0f187e0e974, type: 2}
+  _UpLeft: {fileID: 7400000, guid: 7372eeeb1289a1f4fb0d20204a1d1b98, type: 2}

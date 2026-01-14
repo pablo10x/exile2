@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac13ed38019e57d4f9153a7c2ea8a015, type: 3}
+  m_Name: openai_gpt-image-1
+  m_EditorClassIdentifier: 
+  id: gpt-image-1
+  displayName: GPT Image 1
+  api:
+    _value: OpenAI
+  deprecated: 0
+  custom: 0
+  locked: 0
+  familyName: GPT
+  modelVersion: 
+  versionNumber: 0
+  legacy: 0
+  inputModality: 3
+  outputModality: 2
+  type: 2
+  capabilities: 384
+  maxInputTokens: 0
+  maxOutputTokens: 0
+  prices:
+  - rid: 6068685212012773492
+  - rid: 6068685212012773493
+  - rid: 6068685212012773494
+  - rid: 6068685212012773495
+  - rid: 6068685212012773496
+  - rid: 6068685212012773497
+  - rid: 6068685212012773498
+  - rid: 6068685212012773499
+  - rid: 6068685212012773500
+  resourceName: 
+  apiKey:
+    key: 
+    encrypt: 0
+    visible: 0
+    isValid: 0
+    lastValidated:
+      _value: 0
+  embeddingDimension: 1536
+  references:
+    version: 2
+    RefIds:
+    - rid: 6068685212012773492
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.011
+        noBackground: 0
+    - rid: 6068685212012773493
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.042
+        noBackground: 0
+    - rid: 6068685212012773494
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.167
+        noBackground: 0
+    - rid: 6068685212012773495
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.016
+        noBackground: 0
+    - rid: 6068685212012773496
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.016
+        noBackground: 0
+    - rid: 6068685212012773497
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.063
+        noBackground: 0
+    - rid: 6068685212012773498
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.063
+        noBackground: 0
+    - rid: 6068685212012773499
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.25
+        noBackground: 0
+    - rid: 6068685212012773500
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.25
+        noBackground: 0

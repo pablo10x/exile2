@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac13ed38019e57d4f9153a7c2ea8a015, type: 3}
+  m_Name: google_gemini-2.5-flash-preview-tts
+  m_EditorClassIdentifier: 
+  id: models/gemini-2.5-flash-preview-tts
+  displayName: Gemini 2.5 Flash Preview TTS
+  api:
+    _value: Google
+  deprecated: 0
+  custom: 0
+  locked: 0
+  familyName: Gemini
+  modelVersion: gemini-2.5-flash-exp-tts-2025-05-19
+  versionNumber: 0
+  legacy: 0
+  inputModality: 1
+  outputModality: 4
+  type: 4
+  capabilities: 512
+  maxInputTokens: 8192
+  maxOutputTokens: 16384
+  prices:
+  - rid: 6068685212012773469
+  - rid: 6068685212012773470
+  - rid: 6068685212012773471
+  resourceName: 
+  apiKey:
+    key: 
+    encrypt: 0
+    visible: 0
+    isValid: 0
+    lastValidated:
+      _value: 0
+  embeddingDimension: 1536
+  references:
+    version: 2
+    RefIds:
+    - rid: 6068685212012773469
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.00000015
+        tokenType: 1
+    - rid: 6068685212012773470
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.0000006
+        tokenType: 2
+    - rid: 6068685212012773471
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.0000035
+        tokenType: 7

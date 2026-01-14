@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12946d15ff5dcb4428dd92947d83406a, type: 3}
+  m_Name: arrangerPreset_CombineIntoOne
+  m_EditorClassIdentifier: 
+  displayName: Combine masks into one
+  description: Combine four different, single channels textures into one RGBA. Save
+    some runtime memory and shader samplers to increase overall game performance.
+  priority: 170
+  inputs:
+  - reference: {fileID: 2800000, guid: cec8e3e3a5b175444b327314ff808207, type: 3}
+    textureName: Input 01
+    description: 
+    folderPath: 
+    addMode: 1
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  - reference: {fileID: 2800000, guid: 1481267b35772d94799fccc7c20ab86a, type: 3}
+    textureName: Input 02
+    description: 
+    folderPath: 
+    addMode: 1
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  - reference: {fileID: 2800000, guid: 380819cbc763fa342a5f67e3aa7ea2bb, type: 3}
+    textureName: Input 03
+    description: 
+    folderPath: 
+    addMode: 1
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  - reference: {fileID: 2800000, guid: 349fbbeacd5dc1144bcec6d5de85104b, type: 3}
+    textureName: Input 04
+    description: 
+    folderPath: 
+    addMode: 1
+    nameFilter: 
+    prefix: 
+    suffix: 
+    foundTextures: []
+    TexturesList: {fileID: 0}
+  outputs:
+  - reference: {fileID: 0}
+    textureName: Output
+    description: 
+    exportMode: 0
+    fileToOverwrite: {fileID: 0}
+    fileName: Output
+    filePath: Assets/
+    importPreset: {fileID: 0}
+    exportNamingConvention: 0
+    exportName: Output
+    exportPrefix: 
+    exportSuffix: 
+    connector: 
+    exportPath: 
+    channelSetups:
+    - Channel: 0
+      Source: 1
+      TextureSetup: Input 01
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0
+    - Channel: 1
+      Source: 1
+      TextureSetup: Input 02
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0
+    - Channel: 2
+      Source: 1
+      TextureSetup: Input 03
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0
+    - Channel: 3
+      Source: 1
+      TextureSetup: Input 04
+      ColorGrayscale: 0
+      InputChannel: 0
+      Invert: 0

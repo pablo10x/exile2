@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5706b8bcb7f50e4a9c3d8436dd5630d, type: 3}
+  m_Name: GoogleAISettings
+  m_EditorClassIdentifier: 
+  apiKey:
+    key: msKRgeqhFQwYPeNGHpQ40dklGcqvCwX2Jb4eps5iTyJt8trAMHvikFbHm473rKL8
+    encrypt: 1
+    visible: 0
+    isValid: 0
+    lastValidated:
+      _value: 0
+  isEnabled: 1
+  isShowingAdvancedSettings: 0
+  baseUrl: https://generativelanguage.googleapis.com
+  connectionCheckUrl: https://generativelanguage.googleapis.com
+  apiKeyValidationUrl: https://generativelanguage.googleapis.com/v1beta/models
+  version: v1
+  betaVersion: v1beta
+  projectId: 268179407031

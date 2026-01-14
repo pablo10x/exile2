@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac13ed38019e57d4f9153a7c2ea8a015, type: 3}
+  m_Name: openrouter_gemini-3-pro-preview
+  m_EditorClassIdentifier: 
+  id: google/gemini-3-pro-preview
+  displayName: Gemini 3 Pro Preview
+  api:
+    _value: OpenRouter
+  deprecated: 0
+  custom: 0
+  locked: 0
+  familyName: Gemini
+  modelVersion: 3
+  versionNumber: 0
+  legacy: 0
+  inputModality: 1
+  outputModality: 0
+  type: 1
+  capabilities: 5
+  maxInputTokens: 1048576
+  maxOutputTokens: 65536
+  prices:
+  - rid: 6068685212012773514
+  - rid: 6068685212012773515
+  - rid: 6068685212012773516
+  - rid: 6068685212012773517
+  - rid: 6068685212012773518
+  - rid: 6068685212012773519
+  - rid: 6068685212012773520
+  - rid: 6068685212012773521
+  resourceName: 
+  apiKey:
+    key: 
+    encrypt: 0
+    visible: 0
+    isValid: 0
+    lastValidated:
+      _value: 0
+  embeddingDimension: 1536
+  references:
+    version: 2
+    RefIds:
+    - rid: 6068685212012773514
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.000002
+        tokenType: 1
+    - rid: 6068685212012773515
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.000012
+        tokenType: 2
+    - rid: 6068685212012773516
+      type: {class: ImagePrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 2
+        costInUsd: 0.008256
+        noBackground: 0
+    - rid: 6068685212012773517
+      type: {class: RequestPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 6
+        costInUsd: 0
+    - rid: 6068685212012773518
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.0000002
+        tokenType: 5
+    - rid: 6068685212012773519
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0.000002375
+        tokenType: 6
+    - rid: 6068685212012773520
+      type: {class: WebSearchPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 5
+        costInUsd: 0
+        contextSize: 0
+    - rid: 6068685212012773521
+      type: {class: TokenPrice, ns: Glitch9.AIDevKit, asm: Glitch9.AIDevKit}
+      data:
+        type: 1
+        costInUsd: 0
+        tokenType: 7

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f62d604cf81c1f43a5eec8593ee379d, type: 3}
+  m_Name: packageInfo_TimeScaler
+  m_EditorClassIdentifier: 
+  toolName: Time Scaler
+  toolDescription: Debug things in slow motion, speed up, or pause. Test your gameplay
+    mechanics in different scenarios.
+  assetStoreLink: https://assetstore.unity.com/packages/slug/270830
+  menuItemPath: Window/FewClicks Dev/Time Scaler
+  isFree: 1
+  toolIcon: {fileID: 2800000, guid: 7ac5ab82f2c70f44b86f0814f63b1532, type: 3}
+  toolMainColor: {r: 0.62352943, g: 0.42745098, b: 0.23921569, a: 1}
