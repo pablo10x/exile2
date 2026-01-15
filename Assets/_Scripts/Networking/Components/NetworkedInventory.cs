@@ -19,9 +19,9 @@ namespace ExileSurvival.Networking.Components
         public InventoryRenderMode inventoryRenderMode => InventoryRenderMode.Grid;
         public bool isInventoryFull => false;
 
-        protected override void Start()
+        protected  void Start()
         {
-            base.Start();
+          
             
             // Initialize InventoryManager
             // Use EntityId as the NetworkInventoryId

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_SERVER || UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEngine;
 using ExileSurvival.Networking.Entities;
 using ExileSurvival.Networking.Data;
@@ -8,24 +9,66 @@ namespace ExileSurvival.Networking.Core
 {
     public class InterestManager : Singleton<InterestManager>
     {
-        [Header("Settings")]
-        public float InterestRadius = 100f; // How far players can see entities
-        public float UpdateInterval = 0.1f; // How often to check for new entities in range
+        #region Inspector Fields
+        [Header("Performance Settings")]
+        [Tooltip("How far players can 'see' entities. Entities outside this radius will be despawned on the client.")]
+        public float InterestRadius = 100f;
+        [Tooltip("The size of each grid cell for spatial partitioning. For best performance, this should be similar to the Interest Radius.")]
+        public float CellSize = 100f;
+        [Tooltip("How often, in seconds, to update entity positions in the grid and check visibility.")]
+        public float UpdateInterval = 0.1f;
+        #endregion
 
+        #region Private Fields
         private float _updateTimer;
+        private SpatialGrid _grid;
+        private readonly Dictionary<int, HashSet<int>> _clientVisibleEntities = new Dictionary<int, HashSet<int>>();
+        private bool _isQuitting = false;
+        private const string TAG = "InterestManager";
+        #endregion
 
-        // Track which entities are visible to which client
-        private readonly Dictionary<int, HashSet<int>> _clientVisibleEntities = new Dictionary<int, HashSet<int>>(); // ClientId -> EntityIds
+        #region Unity Lifecycle
+        private void OnApplicationQuit() => _isQuitting = true;
 
         private void Start()
         {
-            if (ServerManager.Instance != null)
+            if (ServerManager.Instance == null)
             {
-                ServerManager.Instance.OnClientConnected += OnClientConnected;
-                ServerManager.Instance.OnClientDisconnected += OnClientDisconnected;
+                Debug.LogWarning($"[{TAG}] No ServerManager found. Disabling InterestManager.");
+                gameObject.SetActive(false);
+                return;
             }
+
+            _grid = new SpatialGrid(CellSize);
+            ServerManager.Instance.OnClientConnected += OnClientConnected;
+            ServerManager.Instance.OnClientDisconnected += OnClientDisconnected;
         }
 
+        private void Update()
+        {
+            if (_isQuitting) return;
+
+            var serverManager = ServerManager.Instance;
+            if (serverManager == null || !serverManager.IsServerRunning)
+            {
+                return;
+            }
+
+            _updateTimer += Time.deltaTime;
+            if (_updateTimer >= UpdateInterval)
+            {
+                _updateTimer = 0f;
+                UpdateAllClientsVisibility();
+            }
+        }
+        #endregion
+
+        #region Public API
+        public void AddEntity(NetworkEntity entity) => _grid.Add(entity);
+        public void RemoveEntity(NetworkEntity entity) => _grid.Remove(entity);
+        #endregion
+
+        #region Event Handlers
         private void OnClientConnected(int clientId)
         {
             if (!_clientVisibleEntities.ContainsKey(clientId))
@@ -41,75 +84,71 @@ namespace ExileSurvival.Networking.Core
                 _clientVisibleEntities.Remove(clientId);
             }
         }
+        #endregion
 
-        private void Update()
+        #region Core Logic
+        private void UpdateAllClientsVisibility()
         {
-            if (ServerManager.Instance == null || !ServerManager.Instance.IsServer) return;
+            if (NetworkEntityManager.Instance == null || ServerManager.Instance.Server == null) return;
 
-            _updateTimer += Time.deltaTime;
-            if (_updateTimer >= UpdateInterval)
-            {
-                _updateTimer = 0f;
-                UpdateEntityVisibility();
-            }
-        }
-
-        private void UpdateEntityVisibility()
-        {
-            var players = new Dictionary<int, Vector3>(); // ClientId -> Position
             foreach (var entity in NetworkEntityManager.Instance.GetAllEntities())
             {
-                if (entity.TypeId == 0) // Is a player
-                {
-                    players[entity.OwnerId] = entity.transform.position;
-                }
+                _grid.UpdateEntityPosition(entity);
             }
 
-            foreach (var player in players)
+            foreach (var peer in ServerManager.Instance.Server)
             {
-                var clientId = player.Key;
-                var playerPosition = player.Value;
-                var visibleEntities = _clientVisibleEntities[clientId];
-
-                var entitiesInRange = new HashSet<int>();
-
-                foreach (var entity in NetworkEntityManager.Instance.GetAllEntities())
+                var playerEntity = NetworkEntityManager.Instance.GetPlayerEntity(peer.Id);
+                if (playerEntity != null)
                 {
-                    if (entity.EntityId == 0) continue; // Skip invalid entities
-
-                    float distance = Vector3.Distance(playerPosition, entity.transform.position);
-                    if (distance <= InterestRadius)
-                    {
-                        entitiesInRange.Add(entity.EntityId);
-
-                        if (!visibleEntities.Contains(entity.EntityId))
-                        {
-                            // New entity in range, send spawn packet
-                            SendSpawnPacket(clientId, entity);
-                            visibleEntities.Add(entity.EntityId);
-                        }
-                    }
-                }
-
-                // Check for entities that are no longer in range
-                var entitiesToDestroy = new HashSet<int>(visibleEntities);
-                entitiesToDestroy.ExceptWith(entitiesInRange);
-
-                foreach (var entityId in entitiesToDestroy)
-                {
-                    SendDestroyPacket(clientId, entityId);
-                    visibleEntities.Remove(entityId);
+                    UpdateClientVisibility(peer.Id, playerEntity);
                 }
             }
         }
 
+        private void UpdateClientVisibility(int clientId, NetworkEntity playerEntity)
+        {
+            if (!_clientVisibleEntities.ContainsKey(clientId)) return;
+
+            var visibleEntities = _clientVisibleEntities[clientId];
+            var entitiesInRange = new HashSet<int>();
+            var playerPosition = playerEntity.transform.position;
+
+            foreach (var entity in _grid.GetEntitiesInRadius(playerPosition, InterestRadius))
+            {
+                if (entity == null || entity.EntityId == 0) continue;
+
+                if (Vector3.Distance(playerPosition, entity.transform.position) <= InterestRadius)
+                {
+                    entitiesInRange.Add(entity.EntityId);
+
+                    if (!visibleEntities.Contains(entity.EntityId))
+                    {
+                        SendSpawnPacket(clientId, entity);
+                        visibleEntities.Add(entity.EntityId);
+                    }
+                }
+            }
+
+            var entitiesToDestroy = new HashSet<int>(visibleEntities);
+            entitiesToDestroy.ExceptWith(entitiesInRange);
+
+            foreach (var entityId in entitiesToDestroy)
+            {
+                SendDestroyPacket(clientId, entityId);
+                visibleEntities.Remove(entityId);
+            }
+        }
+        #endregion
+
+        #region Packet Sending
         private void SendSpawnPacket(int clientId, NetworkEntity entity)
         {
             var packet = new SpawnPacket
             {
                 EntityId = entity.EntityId,
                 OwnerId = entity.OwnerId,
-                TypeId = entity.TypeId,
+                PrefabGuid = entity.PrefabGuid,
                 Position = entity.transform.position,
                 Rotation = entity.transform.rotation
             };
@@ -121,5 +160,7 @@ namespace ExileSurvival.Networking.Core
             var packet = new EntityDestroyPacket { EntityId = entityId };
             ServerManager.Instance.SendToClient(clientId, packet, DeliveryMethod.ReliableOrdered);
         }
+        #endregion
     }
 }
+#endif

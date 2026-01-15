@@ -7,86 +7,80 @@ namespace ExileSurvival.Networking.Core
 {
     public class NetworkGameManager : Singleton<NetworkGameManager>
     {
-        [Header("Prefabs")]
+        [Header("Player Settings")]
+        [Tooltip("The prefab for the player character. Must have a NetworkEntity component.")]
         public NetworkEntity PlayerPrefab;
-        // Enemy and Item prefabs should be handled by a server-side spawner system, not this manager.
+        
+        public NetworkEntity LocalPlayer { get; private set; }
 
         private int _nextEntityId = 1;
 
         private void Start()
         {
+#if UNITY_SERVER || UNITY_EDITOR
             if (ServerManager.Instance != null)
             {
                 ServerManager.Instance.OnClientReady += OnClientReady;
             }
+#endif
             
+#if !UNITY_SERVER || UNITY_EDITOR
             if (ClientManager.Instance != null)
             {
                 ClientManager.Instance.PacketProcessor.SubscribeNetSerializable<SpawnPacket, NetPeer>(OnSpawnPacketReceived);
                 ClientManager.Instance.PacketProcessor.SubscribeNetSerializable<EntityDestroyPacket, NetPeer>(OnEntityDestroyReceived);
             }
+#endif
         }
 
+#if UNITY_SERVER || UNITY_EDITOR
         private void OnClientReady(int clientId)
         {
-            // Spawn Player for the new client
             SpawnPlayer(clientId, new Vector3(0, 5, 0));
         }
 
         public void SpawnPlayer(int clientId, Vector3 position)
         {
-            if (PlayerPrefab == null) return;
+            if (PlayerPrefab == null)
+            {
+                Debug.LogError("PlayerPrefab is not assigned in NetworkGameManager.");
+                return;
+            }
 
-            // 1. Instantiate on Server
             var player = Instantiate(PlayerPrefab, position, Quaternion.identity);
-            
-            // 2. Assign IDs
-            player.OwnerId = clientId;
-            player.EntityId = GenerateEntityId();
-            player.TypeId = 0; // 0 for Player
-            
-            // 3. Register
-            if (NetworkEntityManager.Instance != null)
-                NetworkEntityManager.Instance.RegisterEntity(player);
-            
-            // The InterestManager will handle sending the spawn packet to other clients.
+            int newEntityId = GenerateEntityId();
+            player.Initialize(newEntityId, clientId);
         }
+#endif
 
+#if !UNITY_SERVER || UNITY_EDITOR
         private void OnSpawnPacketReceived(SpawnPacket packet, NetPeer peer)
         {
-            // Client side spawning
-            NetworkEntity prefab = null;
-            if (packet.TypeId == 0) // Player
+            var prefab = PrefabManager.Instance.GetPrefab(packet.PrefabGuid);
+            if (prefab == null)
             {
-                prefab = PlayerPrefab;
+                Debug.LogWarning($"Prefab not found for GUID: {packet.PrefabGuid}");
+                return;
             }
-            // TODO: Add a way to get prefabs for other types (e.g. from a dictionary or addressables)
-            
-            if (prefab != null)
+
+            var entity = Instantiate(prefab, packet.Position, packet.Rotation);
+            entity.Initialize(packet.EntityId, packet.OwnerId);
+
+            if (ClientManager.Instance != null && packet.OwnerId == ClientManager.Instance.LocalClientId)
             {
-                var entity = Instantiate(prefab, packet.Position, packet.Rotation);
-                entity.EntityId = packet.EntityId;
-                entity.OwnerId = packet.OwnerId;
-                entity.TypeId = packet.TypeId;
-                
-                if (NetworkEntityManager.Instance != null)
-                    NetworkEntityManager.Instance.RegisterEntity(entity);
+                LocalPlayer = entity;
             }
         }
 
         private void OnEntityDestroyReceived(EntityDestroyPacket packet, NetPeer peer)
         {
-            // Find and destroy the entity
-            // This is a simplified approach. A more robust system would use a dictionary for faster lookups.
-            foreach (var entity in FindObjectsOfType<NetworkEntity>())
+            var entity = NetworkEntityManager.Instance.GetEntity(packet.EntityId);
+            if (entity != null)
             {
-                if (entity.EntityId == packet.EntityId)
-                {
-                    Destroy(entity.gameObject);
-                    break;
-                }
+                Destroy(entity.gameObject);
             }
         }
+#endif
         
         private int GenerateEntityId() => _nextEntityId++;
     }

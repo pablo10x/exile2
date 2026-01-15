@@ -12,11 +12,22 @@ namespace ExileSurvival.Networking.Core
 
         public IReadOnlyCollection<NetworkEntity> GetAllEntities() => _entities.Values;
 
+        public NetworkEntity GetEntity(int entityId)
+        {
+            _entities.TryGetValue(entityId, out var entity);
+            return entity;
+        }
+
+        public NetworkEntity GetPlayerEntity(int clientId)
+        {
+            _playerEntities.TryGetValue(clientId, out var entity);
+            return entity;
+        }
+
         private void Start()
         {
             DontDestroyOnLoad(gameObject);
             
-            // Subscribe to events
             if (ServerManager.Instance != null)
             {
                 ServerManager.Instance.OnServerReceivedInput += OnServerInput;
@@ -68,7 +79,6 @@ namespace ExileSurvival.Networking.Core
 
         private void OnClientState(PlayerStatePacket packet)
         {
-            // Assuming PlayerId in packet is the ClientId (OwnerId)
             if (_playerEntities.TryGetValue(packet.PlayerId, out var entity))
             {
                 if (entity is PredictedEntity predictedEntity)
@@ -82,7 +92,6 @@ namespace ExileSurvival.Networking.Core
         {
             if (_playerEntities.TryGetValue(clientId, out var entity))
             {
-                // Handle disconnection logic (e.g. destroy entity or mark as disconnected)
                 _playerEntities.Remove(clientId);
             }
         }

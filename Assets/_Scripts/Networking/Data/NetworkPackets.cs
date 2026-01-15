@@ -54,7 +54,7 @@ namespace ExileSurvival.Networking.Data
     {
         public int EntityId;
         public int OwnerId;
-        public byte TypeId; // 0 = Player, 1 = Enemy, 2 = Container, etc.
+        public string PrefabGuid; // The unique ID of the prefab to spawn
         public Vector3 Position;
         public Quaternion Rotation;
 
@@ -62,7 +62,7 @@ namespace ExileSurvival.Networking.Data
         {
             writer.Put(EntityId);
             writer.Put(OwnerId);
-            writer.Put(TypeId);
+            writer.Put(PrefabGuid);
             writer.Put(Position.x); writer.Put(Position.y); writer.Put(Position.z);
             writer.Put(Rotation.x); writer.Put(Rotation.y); writer.Put(Rotation.z); writer.Put(Rotation.w);
         }
@@ -71,7 +71,7 @@ namespace ExileSurvival.Networking.Data
         {
             EntityId = reader.GetInt();
             OwnerId = reader.GetInt();
-            TypeId = reader.GetByte();
+            PrefabGuid = reader.GetString();
             Position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             Rotation = new Quaternion(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }

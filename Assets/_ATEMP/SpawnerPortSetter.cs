@@ -53,11 +53,7 @@ public class SpawnerPortSetter : MonoBehaviour {
             serverManager.Port = port;
             serverManager.StartServer();
 
-            // LiteNetLib logic is simpler, errors usually throw immediately or log internally
-            if (serverManager.IsServer)
-                 UnityEngine.Debug.Log($"[SpawnerPortSetter] Server started successfully on port {port}");
-            else
-                 UnityEngine.Debug.LogError($"[SpawnerPortSetter] Server failed to start on port {port}");
+           
 
         }
         catch (Exception ex) {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !UNITY_SERVER || UNITY_EDITOR
+using System;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine;
@@ -10,88 +11,113 @@ namespace ExileSurvival.Networking.Core
 {
     public class ClientManager : Singleton<ClientManager>
     {
-        [Header("Settings")]
-        public string ConnectionKey = "ExileSurvival_Dev";
-        public int TickRate = 60;
+        #region Inspector Fields
+        [BoxGroup("Client Configuration")]
+        [Tooltip("The IP address of the server to connect to.")]
+        public string ServerAddress = "localhost";
         
+        [BoxGroup("Client Configuration")]
+        [Tooltip("The port of the server to connect to.")]
+        public int Port = 9050;
+
+        [BoxGroup("Client Configuration")]
+        [Tooltip("A secret key that must match the server's key to connect.")]
+        public string ConnectionKey = "ExileSurvival_Dev";
+        
+        [BoxGroup("Client Configuration")]
+        [Tooltip("How many times per second the client will tick.")]
+        public int TickRate = 60;
+        #endregion
+
+        #region Public Properties
         public NetManager Client { get; private set; }
         public NetPacketProcessor PacketProcessor { get; private set; }
         public int LocalClientId { get; private set; } = -1;
-        
-        // Tick System
         public uint CurrentTick { get; private set; }
-        private float _tickTimer;
-        private float _tickInterval;
-        
-        private EventBasedNetListener _listener;
-        private NetDataWriter _writer;
-
         public bool IsConnected => Client != null && Client.FirstPeer != null && Client.FirstPeer.ConnectionState == ConnectionState.Connected;
+        #endregion
 
-        // Events
+        #region Events
         public event Action<PlayerStatePacket> OnClientReceivedState;
         public event Action<JoinAcceptPacket> OnJoinAccept;
+        #endregion
+
+        #region Private Fields
+        private float _tickTimer;
+        private float _tickInterval;
+        private bool _isQuitting = false;
+        private EventBasedNetListener _listener;
+        private NetDataWriter _writer;
+        private const string TAG = "ClientManager";
+        #endregion
+
+        #region Odin Inspector
+        [BoxGroup("Client Control")]
+        [Button("Connect"), GUIColor(0, 1, 0), PropertyOrder(-1)]
+        [HideIf("IsConnected")]
+        private void ConnectButton() => Connect(ServerAddress, Port, ConnectionKey);
+
+        [BoxGroup("Client Control")]
+        [Button("Disconnect"), GUIColor(1, 0, 0), PropertyOrder(-1)]
+        [EnableIf("IsConnected")]
+        private void DisconnectButton() => StopClient();
+
+        [BoxGroup("Live Client Info")]
+        [ShowInInspector, ReadOnly, ShowIf("@IsConnected")]
+        private int ClientId => LocalClientId;
+        
+        [BoxGroup("Live Client Info")]
+        [ShowInInspector, ReadOnly, ShowIf("@IsConnected")]
+        private uint SyncedTick => CurrentTick;
+        #endregion
+
+        #region Unity Lifecycle
+        private void OnApplicationQuit() => _isQuitting = true;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) {
-                Destroy(gameObject);
-                return;
-            }
-            DontDestroyOnLoad(gameObject);
+           
             
             _tickInterval = 1f / TickRate;
             _writer = new NetDataWriter();
             PacketProcessor = new NetPacketProcessor();
             
             NetworkCommon.RegisterPackets(PacketProcessor);
-            SubscribePackets();
+            SubscribeToPacketProcessor();
+            InitializeClient();
         }
 
-        private void SubscribePackets()
+        private void Update()
         {
-            PacketProcessor.SubscribeNetSerializable<PlayerStatePacket, NetPeer>(OnStateReceived);
-            PacketProcessor.SubscribeNetSerializable<JoinAcceptPacket, NetPeer>(OnJoinAcceptReceived);
-        }
+            if (_isQuitting || Client == null) return;
 
-        public void StartClient(string address, int port)
-        {
-            if (Client == null)
+            Client.PollEvents();
+            if (IsConnected)
             {
-                _listener = new EventBasedNetListener();
-                _listener.PeerConnectedEvent += peer => 
-                {
-                    Debug.Log("Connected to server!");
-                };
-                
-                _listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod, channel) =>
-                {
-                    PacketProcessor.ReadAllPackets(dataReader, fromPeer);
-                };
-                
-                _listener.PeerDisconnectedEvent += (peer, disconnectInfo) =>
-                {
-                    Debug.Log($"Disconnected from server: {disconnectInfo.Reason}");
-                    LocalClientId = -1;
-                };
-
-                Client = new NetManager(_listener);
-                Client.Start();
+                ClientTickLogic();
             }
+        }
+        #endregion
 
-            Connect(address, port, ConnectionKey);
+        #region Public API
+        public void InitializeClient()
+        {
+            if (Client != null) return;
+
+            _listener = new EventBasedNetListener();
+            SetupListeners();
+
+            Client = new NetManager(_listener);
+            Client.Start();
         }
 
         public void Connect(string address, int port, string key)
         {
-            if (Client == null)
-            {
-                StartClient(address, port);
-                return;
-            }
+            if (Client == null) InitializeClient();
 
             if (Client.FirstPeer == null || Client.FirstPeer.ConnectionState == ConnectionState.Disconnected)
             {
+                Debug.Log($"[{TAG}] Attempting to connect to {address}:{port}...");
                 Client.Connect(address, port, key);
             }
         }
@@ -99,20 +125,37 @@ namespace ExileSurvival.Networking.Core
         public void StopClient()
         {
             Client?.Stop();
-            Client = null;
-            LocalClientId = -1;
         }
 
-        private void Update()
+        public void SendPacket<T>(T packet, DeliveryMethod deliveryMethod) where T : INetSerializable, new()
         {
-            Client?.PollEvents();
+            if (!IsConnected) return;
             
-            if (IsConnected)
-            {
-                ClientTickLogic();
-            }
+            _writer.Reset();
+            PacketProcessor.WriteNetSerializable(_writer, ref packet);
+            Client.FirstPeer.Send(_writer, deliveryMethod);
+        }
+        #endregion
+
+        #region Listeners
+        private void SetupListeners()
+        {
+            _listener.PeerConnectedEvent += peer => Debug.Log($"[{TAG}] Connection successful!");
+            _listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod, channel) => PacketProcessor.ReadAllPackets(dataReader, fromPeer);
+            _listener.PeerDisconnectedEvent += (peer, disconnectInfo) => {
+                Debug.Log($"[{TAG}] Disconnected from server: {disconnectInfo.Reason}");
+                LocalClientId = -1;
+            };
         }
         
+        private void SubscribeToPacketProcessor()
+        {
+            PacketProcessor.SubscribeNetSerializable<PlayerStatePacket, NetPeer>(OnStateReceived);
+            PacketProcessor.SubscribeNetSerializable<JoinAcceptPacket, NetPeer>(OnJoinAcceptReceived);
+        }
+        #endregion
+
+        #region Internal Logic
         private void ClientTickLogic() {
             _tickTimer += Time.deltaTime;
             while (_tickTimer >= _tickInterval) {
@@ -121,46 +164,25 @@ namespace ExileSurvival.Networking.Core
             }
         }
 
-        public void SendPacket<T>(T packet, DeliveryMethod deliveryMethod) where T : INetSerializable, new()
-        {
-            if (Client == null || Client.FirstPeer == null) return;
-            
-            _writer.Reset();
-            PacketProcessor.WriteNetSerializable(_writer, ref packet);
-            Client.FirstPeer.Send(_writer, deliveryMethod);
-        }
-
-        private void OnStateReceived(PlayerStatePacket packet, NetPeer peer) {
-            OnClientReceivedState?.Invoke(packet);
-        }
+        private void OnStateReceived(PlayerStatePacket packet, NetPeer peer) => OnClientReceivedState?.Invoke(packet);
 
         private void OnJoinAcceptReceived(JoinAcceptPacket packet, NetPeer peer) {
-            Debug.Log($"Join Accepted! My ID: {packet.ClientId}, Server Tick: {packet.ServerTick}, Map: {packet.MapName}");
+            Debug.Log($"[{TAG}] Join Accepted! My ID: {packet.ClientId}, Server Tick: {packet.ServerTick}, Map: {packet.MapName}");
             LocalClientId = packet.ClientId;
-            CurrentTick = packet.ServerTick; // Sync tick
+            CurrentTick = packet.ServerTick;
             OnJoinAccept?.Invoke(packet);
             
-            // Load the map scene
             SceneManager.LoadScene(packet.MapName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // Now that the scene is loaded, tell the server we are ready
-            Debug.Log("Scene loaded, sending ClientReadyPacket.");
+            Debug.Log($"[{TAG}] Scene loaded, sending ClientReadyPacket.");
             SendPacket(new ClientReadyPacket(), DeliveryMethod.ReliableOrdered);
             SceneManager.sceneLoaded -= OnSceneLoaded;
         }
-        
-        [Button("Start Client")]
-        private void StartC() {
-            StartClient("localhost", 9050);
-        }
-
-        [Button("Stop Client")]
-        private void StopC() {
-            StopClient();
-        }
+        #endregion
     }
 }
+#endif
